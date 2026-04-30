@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAS 路徑轉換工具</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #f0ede8;
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 20px 80px;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 40px 36px 44px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  }
+
+  /* header */
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 15px;
+    color: #999;
+    margin-bottom: 32px;
+  }
+
+  /* section */
+  .section { margin-bottom: 28px; }
+  .section-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+  }
+
+  /* pill tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  .tag {
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  /* mode tags — blue */
+  .tag-mode {
+    background: #eef0fb;
+    color: #5a65c8;
+  }
+  .tag-mode:hover { background: #e0e3f7; }
+  .tag-mode.active {
+    background: #4c57bf;
+    color: #fff;
+    border-color: #4c57bf;
+  }
+
+  /* textarea */
+  textarea {
+    width: 100%;
+    background: #f7f6f4;
+    border: 2px solid #e8e5e0;
+    border-radius: 14px;
+    padding: 16px 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: #1a1a1a;
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.8;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  textarea:focus {
+    border-color: #4c57bf;
+    box-shadow: 0 0 0 4px rgba(76,87,191,0.1);
+    background: #fff;
+  }
+  textarea::placeholder { color: #c0bdb8; }
+
+  /* result box */
+  .result-wrap { position: relative; }
+
+  .result-box {
+    width: 100%;
+    background: #f7f6f4;
+    border: 2px solid #e8e5e0;
+    border-radius: 14px;
+    padding: 16px 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    min-height: 90px;
+    line-height: 1.8;
+    word-break: break-all;
+    white-space: pre-wrap;
+    color: #b0ada8;
+    transition: all 0.2s;
+  }
+  .result-box.has-result {
+    color: #1a7a45;
+    background: #f0faf5;
+    border-color: #a8d9bc;
+  }
+
+  /* copy button */
+  .copy-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #fff;
+    border: 1.5px solid #e0ddd8;
+    border-radius: 8px;
+    padding: 5px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.14s;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+  .copy-btn:hover { border-color: #bbb; color: #444; background: #f7f6f4; }
+  .copy-btn.ok {
+    border-color: #a8d9bc;
+    color: #1a7a45;
+    background: #f0faf5;
+  }
+
+  /* arrow divider */
+  .arrow-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 18px 0;
+  }
+  .arrow-line { flex: 1; height: 1.5px; background: #ece9e4; }
+  .arrow-label {
+    font-size: 13px;
+    color: #bbb;
+    font-weight: 500;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* generate button */
+  .generate-btn {
+    width: 100%;
+    background: #4c57bf;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 18px;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'Noto Sans TC', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+    transition: opacity 0.15s, transform 0.12s;
+    letter-spacing: 0.02em;
+  }
+  .generate-btn:hover { opacity: 0.88; }
+  .generate-btn:active { transform: scale(0.98); }
+
+  /* animations */
+  @keyframes up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card { animation: up 0.3s ease both; }
+
+  @media (max-width: 480px) {
+    body { padding: 24px 12px 60px; }
+    .card { padding: 28px 20px 32px; }
+    h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <h1>路徑轉換工具</h1>
+  <p class="subtitle">Mac ↔ PC · NAS 路徑一鍵互換</p>
+
+  <!-- mode -->
+  <div class="section">
+    <div class="section-label">轉換方向（單選）</div>
+    <div class="tags" id="mode-tags">
+      <span class="tag tag-mode active" data-mode="mac2pc" onclick="selectMode(this)">🍎 Mac → PC</span>
+      <span class="tag tag-mode" data-mode="pc2mac" onclick="selectMode(this)">🪟 PC → Mac</span>
+    </div>
+  </div>
+
+  <!-- input -->
+  <div class="section">
+    <div class="section-label" id="input-label">貼上 Mac 路徑</div>
+    <textarea id="input-path"
+      placeholder="素材庫/【02-1】影片素材/2026_影片素材/活動-影片/檔案.mp4"
+      oninput="convert()" spellcheck="false"></textarea>
+  </div>
+
+  <!-- arrow -->
+  <div class="arrow-row">
+    <div class="arrow-line"></div>
+    <div class="arrow-label"><span id="arrow-text">轉換為 PC 路徑</span> ↓</div>
+    <div class="arrow-line"></div>
+  </div>
+
+  <!-- result -->
+  <div class="section">
+    <div class="section-label" id="output-label">PC 路徑結果</div>
+    <div class="result-wrap">
+      <div class="result-box" id="output-path">等待輸入路徑...</div>
+      <button class="copy-btn" id="copy-btn" onclick="copyResult()">複製</button>
+    </div>
+  </div>
+
+  <!-- button -->
+  <button class="generate-btn" onclick="convert()">
+    <span>⇄</span> 立即轉換
+  </button>
+
+</div>
+
+<script>
+  let mode = 'mac2pc';
+  const MAC_PRE = '素材庫';
+  const PC_PRE  = 'M:';
+
+  function selectMode(el) {
+    document.querySelectorAll('.tag-mode').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    mode = el.dataset.mode;
+    document.getElementById('input-label').textContent  = mode === 'mac2pc' ? '貼上 Mac 路徑' : '貼上 PC 路徑';
+    document.getElementById('output-label').textContent = mode === 'mac2pc' ? 'PC 路徑結果'   : 'Mac 路徑結果';
+    document.getElementById('arrow-text').textContent   = mode === 'mac2pc' ? '轉換為 PC 路徑' : '轉換為 Mac 路徑';
+    document.getElementById('input-path').placeholder  = mode === 'mac2pc'
+      ? '素材庫/【02-1】影片素材/2026_影片素材/活動-影片/檔案.mp4'
+      : 'M:\\【02-1】影片素材\\2026_影片素材\\活動-影片\\檔案.mp4';
+    document.getElementById('input-path').value = '';
+    setOutput('', false);
+  }
+
+  function setOutput(text, ok) {
+    const el = document.getElementById('output-path');
+    if (!text) {
+      el.textContent = '等待輸入路徑...';
+      el.classList.remove('has-result');
+    } else {
+      el.textContent = text;
+      el.classList.toggle('has-result', ok);
+    }
+  }
+
+  function convert() {
+    const raw = document.getElementById('input-path').value.trim();
+    if (!raw) { setOutput('', false); return; }
+
+    let result = '';
+    if (mode === 'mac2pc') {
+      let body = raw;
+      if (body.startsWith(MAC_PRE + '/')) body = body.slice((MAC_PRE + '/').length);
+      else if (body.startsWith(MAC_PRE)) { body = body.slice(MAC_PRE.length); if (body.startsWith('/')) body = body.slice(1); }
+      result = PC_PRE + '\\' + body.replace(/\//g, '\\');
+    } else {
+      const rawN = raw.replace(/\\/g, '/');
+      const pcN  = PC_PRE.replace(/\\/g, '/');
+      let body = rawN;
+      if (body.startsWith(pcN + '/')) body = body.slice((pcN + '/').length);
+      else if (body.startsWith(pcN)) { body = body.slice(pcN.length); if (body.startsWith('/')) body = body.slice(1); }
+      result = MAC_PRE + '/' + body;
+    }
+    setOutput(result, true);
+  }
+
+  function copyResult() {
+    const text = document.getElementById('output-path').textContent;
+    if (!text || text === '等待輸入路徑...') return;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = '已複製 ✓';
+      btn.classList.add('ok');
+      setTimeout(() => { btn.textContent = '複製'; btn.classList.remove('ok'); }, 1800);
+    });
+  }
+</script>
+</body>
+</html>
