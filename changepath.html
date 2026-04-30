@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NAS 路徑轉換工具</title>
+<title>路徑轉換工具</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -14,35 +14,61 @@
     font-family: 'Noto Sans TC', sans-serif;
     min-height: 100vh;
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 48px 20px 80px;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 80px;
   }
 
-  .card {
-    background: #ffffff;
-    border-radius: 20px;
-    padding: 40px 36px 44px;
+  .container {
     width: 100%;
     max-width: 600px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
-  /* header */
+  /* back link */
+  .back-link {
+    align-self: center;
+    font-size: 14px;
+    color: #bbb;
+    text-decoration: none;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.15s;
+  }
+  .back-link:hover { color: #888; }
+
+  /* header outside card */
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
   h1 {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 700;
     color: #1a1a1a;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
   }
   .subtitle {
     font-size: 15px;
     color: #999;
-    margin-bottom: 32px;
+  }
+
+  /* card */
+  .card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 32px 28px 36px;
+    width: 100%;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
   }
 
   /* section */
-  .section { margin-bottom: 28px; }
+  .section { margin-bottom: 24px; }
   .section-label {
     font-size: 15px;
     font-weight: 700;
@@ -52,19 +78,15 @@
 
   /* pill tags */
   .tags { display: flex; flex-wrap: wrap; gap: 10px; }
-
   .tag {
     padding: 10px 20px;
     border-radius: 999px;
     font-size: 15px;
     font-weight: 500;
     cursor: pointer;
-    border: 2px solid transparent;
     transition: all 0.15s;
     user-select: none;
   }
-
-  /* mode tags — blue */
   .tag-mode {
     background: #eef0fb;
     color: #5a65c8;
@@ -73,7 +95,6 @@
   .tag-mode.active {
     background: #4c57bf;
     color: #fff;
-    border-color: #4c57bf;
   }
 
   /* textarea */
@@ -99,9 +120,8 @@
   }
   textarea::placeholder { color: #c0bdb8; }
 
-  /* result box */
+  /* result */
   .result-wrap { position: relative; }
-
   .result-box {
     width: 100%;
     background: #f7f6f4;
@@ -111,10 +131,10 @@
     font-family: 'IBM Plex Mono', monospace;
     font-size: 14px;
     min-height: 90px;
-    line-height: 1.8;
     word-break: break-all;
     white-space: pre-wrap;
-    color: #b0ada8;
+    line-height: 1.8;
+    color: #c0bdb8;
     transition: all 0.2s;
   }
   .result-box.has-result {
@@ -123,7 +143,6 @@
     border-color: #a8d9bc;
   }
 
-  /* copy button */
   .copy-btn {
     position: absolute;
     top: 12px;
@@ -146,7 +165,7 @@
     background: #f0faf5;
   }
 
-  /* arrow divider */
+  /* arrow */
   .arrow-row {
     display: flex;
     align-items: center;
@@ -159,12 +178,9 @@
     color: #bbb;
     font-weight: 500;
     white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 6px;
   }
 
-  /* generate button */
+  /* button */
   .generate-btn {
     width: 100%;
     background: #4c57bf;
@@ -182,75 +198,72 @@
     gap: 10px;
     margin-top: 8px;
     transition: opacity 0.15s, transform 0.12s;
-    letter-spacing: 0.02em;
   }
   .generate-btn:hover { opacity: 0.88; }
   .generate-btn:active { transform: scale(0.98); }
 
-  /* animations */
+  /* animation */
   @keyframes up {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  .card { animation: up 0.3s ease both; }
+  .back-link { animation: up 0.25s ease both; }
+  .header    { animation: up 0.3s 0.05s ease both; }
+  .card      { animation: up 0.3s 0.1s ease both; }
 
   @media (max-width: 480px) {
-    body { padding: 24px 12px 60px; }
-    .card { padding: 28px 20px 32px; }
-    h1 { font-size: 22px; }
+    body { padding: 28px 14px 60px; }
+    h1 { font-size: 24px; }
+    .card { padding: 24px 18px 28px; }
   }
 </style>
 </head>
 <body>
+<div class="container">
 
- <div class="page-header">
-  <a href="https://shitaaaa.github.io/tools/">← 🍎 西達小天地</a>
-  
-</div>
- 
-<div class="card">
- 
+  <a class="back-link" href="https://shitaaaa.github.io/tools/">
+    ← 🍎 西達小天地
+  </a>
 
-  <!-- mode -->
-  <div class="section">
-   <h1>路徑轉換工具</h1>
-  <p class="subtitle">Mac ↔ PC · NAS 路徑一鍵互換</p><br>
-    <div class="section-label">轉換方向（單選）</div>
-    <div class="tags" id="mode-tags">
-      <span class="tag tag-mode active" data-mode="mac2pc" onclick="selectMode(this)">🍎 Mac → PC</span>
-      <span class="tag tag-mode" data-mode="pc2mac" onclick="selectMode(this)">🪟 PC → Mac</span>
+  <div class="header">
+    <h1>路徑轉換工具</h1>
+    <p class="subtitle">Mac ↔ PC · NAS 路徑一鍵互換</p>
+  </div>
+
+  <div class="card">
+
+    <div class="section">
+      <div class="section-label">轉換方向（單選）</div>
+      <div class="tags">
+        <span class="tag tag-mode active" data-mode="mac2pc" onclick="selectMode(this)">🍎 Mac → PC</span>
+        <span class="tag tag-mode" data-mode="pc2mac" onclick="selectMode(this)">🪟 PC → Mac</span>
+      </div>
     </div>
-  </div>
 
-  <!-- input -->
-  <div class="section">
-    <div class="section-label" id="input-label">貼上 Mac 路徑</div>
-    <textarea id="input-path"
-      placeholder="素材庫/【02-1】影片素材/2026_影片素材/活動-影片/檔案.mp4"
-      oninput="convert()" spellcheck="false"></textarea>
-  </div>
-
-  <!-- arrow -->
-  <div class="arrow-row">
-    <div class="arrow-line"></div>
-    <div class="arrow-label"><span id="arrow-text">轉換為 PC 路徑</span> ↓</div>
-    <div class="arrow-line"></div>
-  </div>
-
-  <!-- result -->
-  <div class="section">
-    <div class="section-label" id="output-label">PC 路徑結果</div>
-    <div class="result-wrap">
-      <div class="result-box" id="output-path">等待輸入路徑...</div>
-      <button class="copy-btn" id="copy-btn" onclick="copyResult()">複製</button>
+    <div class="section">
+      <div class="section-label" id="input-label">貼上 Mac 路徑</div>
+      <textarea id="input-path"
+        placeholder="素材庫/【02-1】影片素材/2026_影片素材/活動-影片/檔案.mp4"
+        oninput="convert()" spellcheck="false"></textarea>
     </div>
+
+    <div class="arrow-row">
+      <div class="arrow-line"></div>
+      <div class="arrow-label"><span id="arrow-text">轉換為 PC 路徑</span> ↓</div>
+      <div class="arrow-line"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label" id="output-label">PC 路徑結果</div>
+      <div class="result-wrap">
+        <div class="result-box" id="output-path">等待輸入路徑...</div>
+        <button class="copy-btn" id="copy-btn" onclick="copyResult()">複製</button>
+      </div>
+    </div>
+
+    <button class="generate-btn" onclick="convert()">⇄ 立即轉換</button>
+
   </div>
-
-  <!-- button -->
-  <button class="generate-btn" onclick="convert()">
-    <span>⇄</span> 立即轉換
-  </button>
-
 </div>
 
 <script>
@@ -286,7 +299,6 @@
   function convert() {
     const raw = document.getElementById('input-path').value.trim();
     if (!raw) { setOutput('', false); return; }
-
     let result = '';
     if (mode === 'mac2pc') {
       let body = raw;
