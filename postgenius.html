@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>貼文產生器 — 🍎西達小天地</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f5f0;
+  --surface: #ffffff;
+  --border: #e0ddd6;
+  --text: #1a1814;
+  --text-muted: #6b6660;
+  --text-hint: #aaa49c;
+  --accent: #4a47cc;
+  --accent-hover: #3836a8;
+  --radius: 14px;
+  --radius-sm: 20px;
+}
+
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 2.5rem 1rem 4rem;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.page-header a {
+  font-size: 13px;
+  color: var(--text-hint);
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+.page-header a:hover { color: var(--text-muted); }
+.page-header h1 { font-size: 24px; font-weight: 700; }
+.page-header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+.card {
+  background: var(--surface);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  padding: 1.75rem 1.75rem 2rem;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+}
+
+.section { margin-bottom: 1.4rem; }
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 9px;
+  letter-spacing: .03em;
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip {
+  padding: 6px 15px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: 'Noto Sans TC', sans-serif;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all .12s ease;
+  user-select: none;
+}
+
+.chip-style { background: #faf4e6; color: #7a5c1e; border-color: #ead9a0; }
+.chip-style.active { background: #c08a20; color: #fff; border-color: #c08a20; }
+
+.chip-topic { background: #edf2fc; color: #1a4a8a; border-color: #b8ccf0; }
+.chip-topic.active { background: #2255cc; color: #fff; border-color: #2255cc; }
+
+.chip-len { background: #eaf5ef; color: #0d5c38; border-color: #9fd8b4; }
+.chip-len.active { background: #1a8c52; color: #fff; border-color: #1a8c52; }
+
+.chip-avoid { background: #fdeaea; color: #8a2222; border-color: #f5b8b8; }
+.chip-avoid.active { background: #cc2222; color: #fff; border-color: #cc2222; }
+
+textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text);
+  background: var(--surface);
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.7;
+  transition: border-color .15s;
+}
+textarea:focus { outline: none; border-color: var(--accent); }
+textarea::placeholder { color: var(--text-hint); }
+.hint { font-size: 12px; color: var(--text-hint); margin-top: 5px; }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.4rem 0; }
+
+.btn {
+  width: 100%;
+  padding: 15px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 500;
+  font-family: 'Noto Sans TC', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background .15s, transform .1s;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.99); }
+.btn:disabled { background: #b0aec0; cursor: not-allowed; transform: none; }
+
+.spinner {
+  width: 15px; height: 15px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error { color: #cc2222; font-size: 13px; margin-top: 9px; min-height: 16px; }
+
+.result-box {
+  margin-top: 1.25rem;
+  background: #f9f8f5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  display: none;
+  animation: fadeUp .25s ease;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.result-label { font-size: 12px; font-weight: 500; color: var(--text-hint); letter-spacing: .04em; }
+.copy-btn {
+  font-size: 12px;
+  padding: 4px 13px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif;
+  transition: all .12s;
+}
+.copy-btn:hover { background: var(--border); }
+.result-text {
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+.back-link {
+  display: block;
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 13px;
+  color: var(--text-hint);
+  text-decoration: none;
+}
+.back-link:hover { color: var(--text-muted); }
+
+@media (max-width: 480px) {
+  .card { padding: 1.25rem 1.1rem 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <a href="https://shitaaaa.github.io/tools/">← 🍎 西達小天地</a>
+  <h1>貼文產生器</h1>
+  <p>幽默短文・一鍵產出・每週都新鮮</p>
+</div>
+
+<div class="card">
+
+  <div class="section">
+    <div class="label">貼文風格（單選）</div>
+    <div class="chips" id="style-chips">
+      <div class="chip chip-style active" data-val="幽默搞笑">幽默搞笑</div>
+      <div class="chip chip-style" data-val="輕鬆閒聊">輕鬆閒聊</div>
+      <div class="chip chip-style" data-val="溫暖療癒">溫暖療癒</div>
+      <div class="chip chip-style" data-val="有點觀點">有點觀點</div>
+      <div class="chip chip-style" data-val="自嘲苦中作樂">自嘲苦中作樂</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="label">話題來源</div>
+    <div class="chips" id="topic-chips">
+      <div class="chip chip-topic" data-val="當週新聞">當週新聞</div>
+      <div class="chip chip-topic" data-val="生活隨感">生活隨感</div>
+      <div class="chip chip-topic" data-val="社群梗">社群梗</div>
+      <div class="chip chip-topic" data-val="食物">食物</div>
+      <div class="chip chip-topic" data-val="天氣">天氣</div>
+      <div class="chip chip-topic" data-val="上班族心聲">上班族心聲</div>
+      <div class="chip chip-topic" data-val="科技">科技</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <textarea id="custom-topic" placeholder="自己填想聊的話題，例如：最近買了新耳機結果充電線不一樣、公司廁所沒有衛生紙..."></textarea>
+    <p class="hint">填了這裡，上方標籤會自動取消；不填就依照上方選的來</p>
+  </div>
+
+  <div class="section">
+    <div class="label">貼文長度（單選）</div>
+    <div class="chips" id="len-chips">
+      <div class="chip chip-len active" data-val="短（50字以內，隨口一說）">短・隨口一說</div>
+      <div class="chip chip-len" data-val="中（100-150字，有點內容）">中・有點內容</div>
+      <div class="chip chip-len" data-val="長（200字以上，完整一篇）">長・完整一篇</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="label">不想碰的話題（可多選）</div>
+    <div class="chips" id="avoid-chips">
+      <div class="chip chip-avoid" data-val="政治">政治</div>
+      <div class="chip chip-avoid" data-val="宗教">宗教</div>
+      <div class="chip chip-avoid" data-val="業配感">業配感</div>
+      <div class="chip chip-avoid" data-val="感情">感情</div>
+      <div class="chip chip-avoid" data-val="負面抱怨">負面抱怨</div>
+      <div class="chip chip-avoid" data-val="股票投資">股票投資</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <button class="btn" id="gen-btn" onclick="generate()">
+    <div class="spinner" id="spinner"></div>
+    <span id="btn-text">✦ 產出本週貼文</span>
+  </button>
+  <div class="error" id="error-msg"></div>
+
+  <div class="result-box" id="result-box">
+    <div class="result-header">
+      <span class="result-label">貼文內容</span>
+      <button class="copy-btn" onclick="copyText()">複製</button>
+    </div>
+    <div class="result-text" id="result-text"></div>
+  </div>
+
+</div>
+
+<a class="back-link" href="https://shitaaaa.github.io/tools/">← 回到工具首頁</a>
+
+<script>
+  // ✏️ 部署 Vercel 後，把網址換成你的
+  const API_URL = 'https://你的專案名稱.vercel.app/api/generate';
+
+  let selectedStyle = '幽默搞笑';
+  let selectedTopics = [];
+  let selectedLen = '短（50字以內，隨口一說）';
+  let selectedAvoid = [];
+
+  function initChips(groupId, multi, onSelect) {
+    document.getElementById(groupId).querySelectorAll('.chip').forEach(c => {
+      c.addEventListener('click', () => {
+        if (!multi) {
+          document.getElementById(groupId).querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+          c.classList.add('active');
+          onSelect(c.dataset.val);
+        } else {
+          c.classList.toggle('active');
+          onSelect([...document.getElementById(groupId).querySelectorAll('.chip.active')].map(x => x.dataset.val));
+        }
+      });
+    });
+  }
+
+  initChips('style-chips', false, v => selectedStyle = v);
+  initChips('topic-chips', true,  v => selectedTopics = v);
+  initChips('len-chips',   false, v => selectedLen = v);
+  initChips('avoid-chips', true,  v => selectedAvoid = v);
+
+  async function generate() {
+    const btn       = document.getElementById('gen-btn');
+    const spinner   = document.getElementById('spinner');
+    const btnText   = document.getElementById('btn-text');
+    const resultBox = document.getElementById('result-box');
+    const resultText= document.getElementById('result-text');
+    const errMsg    = document.getElementById('error-msg');
+    const custom    = document.getElementById('custom-topic').value.trim();
+
+    const topic = custom || (selectedTopics.length > 0 ? selectedTopics.join('、') : '生活隨感');
+
+    btn.disabled = true;
+    spinner.style.display = 'block';
+    btnText.textContent = '產生中...';
+    errMsg.textContent = '';
+    resultBox.style.display = 'none';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          style: selectedStyle,
+          topic,
+          length: selectedLen,
+          avoid: selectedAvoid,
+        }),
+      });
+      const data = await resp.json();
+      if (data.text) {
+        resultText.textContent = data.text;
+        resultBox.style.display = 'block';
+      } else {
+        errMsg.textContent = data.error || '產生失敗，請再試一次';
+      }
+    } catch {
+      errMsg.textContent = '連線錯誤，請稍後再試';
+    }
+
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = '✦ 產出本週貼文';
+  }
+
+  function copyText() {
+    navigator.clipboard.writeText(document.getElementById('result-text').textContent).then(() => {
+      const b = document.querySelector('.copy-btn');
+      b.textContent = '已複製！';
+      setTimeout(() => b.textContent = '複製', 1500);
+    });
+  }
+</script>
+</body>
+</html>
