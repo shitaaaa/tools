@@ -27,7 +27,6 @@
     align-items: center;
   }
 
-  /* back link */
   .back-link {
     align-self: center;
     font-size: 14px;
@@ -41,11 +40,7 @@
   }
   .back-link:hover { color: #888; }
 
-  /* header outside card */
-  .header {
-    text-align: center;
-    margin-bottom: 28px;
-  }
+  .header { text-align: center; margin-bottom: 28px; }
   h1 {
     font-size: 28px;
     font-weight: 700;
@@ -53,12 +48,8 @@
     margin-bottom: 8px;
     letter-spacing: -0.01em;
   }
-  .subtitle {
-    font-size: 15px;
-    color: #999;
-  }
+  .subtitle { font-size: 15px; color: #999; }
 
-  /* card */
   .card {
     background: #ffffff;
     border-radius: 20px;
@@ -67,7 +58,6 @@
     box-shadow: 0 2px 16px rgba(0,0,0,0.07);
   }
 
-  /* section */
   .section { margin-bottom: 24px; }
   .section-label {
     font-size: 15px;
@@ -76,7 +66,6 @@
     margin-bottom: 12px;
   }
 
-  /* pill tags */
   .tags { display: flex; flex-wrap: wrap; gap: 10px; }
   .tag {
     padding: 10px 20px;
@@ -87,17 +76,10 @@
     transition: all 0.15s;
     user-select: none;
   }
-  .tag-mode {
-    background: #eef0fb;
-    color: #5a65c8;
-  }
+  .tag-mode { background: #eef0fb; color: #5a65c8; }
   .tag-mode:hover { background: #e0e3f7; }
-  .tag-mode.active {
-    background: #4c57bf;
-    color: #fff;
-  }
+  .tag-mode.active { background: #4c57bf; color: #fff; }
 
-  /* textarea */
   textarea {
     width: 100%;
     background: #f7f6f4;
@@ -120,8 +102,14 @@
   }
   textarea::placeholder { color: #c0bdb8; }
 
-  /* result */
-  .result-wrap { position: relative; }
+  .result-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  /* 結果框本身可選取，方便手動複製 */
   .result-box {
     width: 100%;
     background: #f7f6f4;
@@ -136,36 +124,37 @@
     line-height: 1.8;
     color: #c0bdb8;
     transition: all 0.2s;
+    user-select: text;
+    cursor: text;
   }
   .result-box.has-result {
     color: #1a7a45;
     background: #f0faf5;
     border-color: #a8d9bc;
   }
+  .result-box.error {
+    color: #b94040;
+    background: #fdf3f3;
+    border-color: #e8b4b4;
+  }
 
   .copy-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
     background: #fff;
     border: 1.5px solid #e0ddd8;
     border-radius: 8px;
-    padding: 5px 14px;
+    padding: 6px 16px;
     font-size: 13px;
     font-weight: 500;
     color: #888;
     cursor: pointer;
     transition: all 0.14s;
     font-family: 'Noto Sans TC', sans-serif;
+    flex-shrink: 0;
   }
-  .copy-btn:hover { border-color: #bbb; color: #444; background: #f7f6f4; }
-  .copy-btn.ok {
-    border-color: #a8d9bc;
-    color: #1a7a45;
-    background: #f0faf5;
-  }
+  .copy-btn:hover:not(:disabled) { border-color: #bbb; color: #444; background: #f7f6f4; }
+  .copy-btn.ok { border-color: #a8d9bc; color: #1a7a45; background: #f0faf5; }
+  .copy-btn:disabled { opacity: 0.3; cursor: default; }
 
-  /* arrow */
   .arrow-row {
     display: flex;
     align-items: center;
@@ -180,7 +169,6 @@
     white-space: nowrap;
   }
 
-  /* button */
   .generate-btn {
     width: 100%;
     background: #4c57bf;
@@ -202,7 +190,6 @@
   .generate-btn:hover { opacity: 0.88; }
   .generate-btn:active { transform: scale(0.98); }
 
-  /* animation */
   @keyframes up {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -243,7 +230,7 @@
     <div class="section">
       <div class="section-label" id="input-label">貼上 Mac 路徑</div>
       <textarea id="input-path"
-        placeholder="素材庫/【02-1】影片素材/2026_影片素材/活動-影片/檔案.mp4"
+        placeholder="大雲/_03美編部/... 或 /Volumes/大雲/_03美編部/..."
         oninput="convert()" spellcheck="false"></textarea>
     </div>
 
@@ -254,11 +241,11 @@
     </div>
 
     <div class="section">
-      <div class="section-label" id="output-label">PC 路徑結果</div>
-      <div class="result-wrap">
-        <div class="result-box" id="output-path">等待輸入路徑...</div>
-        <button class="copy-btn" id="copy-btn" onclick="copyResult()">複製</button>
+      <div class="result-label-row">
+        <div class="section-label" id="output-label" style="margin:0">PC 路徑結果</div>
+        <button class="copy-btn" id="copy-btn" onclick="copyResult()" disabled>複製</button>
       </div>
+      <div class="result-box" id="output-path">等待輸入路徑...</div>
     </div>
 
     <button class="generate-btn" onclick="convert()">⇄ 立即轉換</button>
@@ -267,9 +254,16 @@
 </div>
 
 <script>
+  const MAPPINGS = [
+    { mac: '素材庫',           pc: 'M:' },
+    { mac: '廠商新品照片與資料', pc: 'P:' },
+    { mac: '大雲',             pc: 'S:' },
+    { mac: '部門專用資料夾',    pc: 'U:' },
+    { mac: 'scan',            pc: 'X:' },
+  ];
+
   let mode = 'mac2pc';
-  const MAC_PRE = '素材庫';
-  const PC_PRE  = 'M:';
+  let currentResult = '';
 
   function selectMode(el) {
     document.querySelectorAll('.tag-mode').forEach(t => t.classList.remove('active'));
@@ -279,52 +273,128 @@
     document.getElementById('output-label').textContent = mode === 'mac2pc' ? 'PC 路徑結果'   : 'Mac 路徑結果';
     document.getElementById('arrow-text').textContent   = mode === 'mac2pc' ? '轉換為 PC 路徑' : '轉換為 Mac 路徑';
     document.getElementById('input-path').placeholder  = mode === 'mac2pc'
-      ? '素材庫/【02-1】影片素材/2026_影片素材/活動-影片/檔案.mp4'
-      : 'M:\\【02-1】影片素材\\2026_影片素材\\活動-影片\\檔案.mp4';
+      ? '大雲/_03美編部/... 或 /Volumes/大雲/_03美編部/...'
+      : 'S:\\_03美編部\\...';
     document.getElementById('input-path').value = '';
-    setOutput('', false);
+    setOutput('', 'empty');
   }
 
-  function setOutput(text, ok) {
-    const el = document.getElementById('output-path');
+  function setOutput(text, state) {
+    const el  = document.getElementById('output-path');
+    const btn = document.getElementById('copy-btn');
+    el.classList.remove('has-result', 'error');
+    currentResult = '';
+
     if (!text) {
       el.textContent = '等待輸入路徑...';
-      el.classList.remove('has-result');
+      btn.disabled = true;
     } else {
       el.textContent = text;
-      el.classList.toggle('has-result', ok);
+      if (state === 'ok') {
+        el.classList.add('has-result');
+        btn.disabled = false;
+        currentResult = text;
+      } else if (state === 'error') {
+        el.classList.add('error');
+        btn.disabled = true;
+      }
     }
+  }
+
+  function stripMacPrefix(raw) {
+    for (const m of MAPPINGS) {
+      const withVol    = '/Volumes/' + m.mac;
+      const withoutVol = m.mac;
+
+      if (raw.startsWith(withVol + '/')) {
+        return { matched: m, body: raw.slice((withVol + '/').length) };
+      }
+      if (raw.startsWith(withVol)) {
+        let body = raw.slice(withVol.length);
+        if (body.startsWith('/')) body = body.slice(1);
+        return { matched: m, body };
+      }
+      if (raw.startsWith(withoutVol + '/')) {
+        return { matched: m, body: raw.slice((withoutVol + '/').length) };
+      }
+      if (raw.startsWith(withoutVol)) {
+        let body = raw.slice(withoutVol.length);
+        if (body.startsWith('/')) body = body.slice(1);
+        return { matched: m, body };
+      }
+    }
+    return null;
+  }
+
+  function stripPcPrefix(raw) {
+    const rawN = raw.replace(/\\/g, '/');
+    for (const m of MAPPINGS) {
+      const pcN = m.pc;
+      if (rawN.startsWith(pcN + '/')) {
+        return { matched: m, body: rawN.slice((pcN + '/').length) };
+      }
+      if (rawN.startsWith(pcN)) {
+        let body = rawN.slice(pcN.length);
+        if (body.startsWith('/')) body = body.slice(1);
+        return { matched: m, body };
+      }
+    }
+    return null;
   }
 
   function convert() {
     const raw = document.getElementById('input-path').value.trim();
-    if (!raw) { setOutput('', false); return; }
-    let result = '';
+    if (!raw) { setOutput('', 'empty'); return; }
+
     if (mode === 'mac2pc') {
-      let body = raw;
-      if (body.startsWith(MAC_PRE + '/')) body = body.slice((MAC_PRE + '/').length);
-      else if (body.startsWith(MAC_PRE)) { body = body.slice(MAC_PRE.length); if (body.startsWith('/')) body = body.slice(1); }
-      result = PC_PRE + '\\' + body.replace(/\//g, '\\');
+      const found = stripMacPrefix(raw);
+      if (!found) { setOutput('⚠ 找不到對應磁碟，請確認路徑開頭是否正確', 'error'); return; }
+      setOutput(found.matched.pc + '\\' + found.body.replace(/\//g, '\\'), 'ok');
     } else {
-      const rawN = raw.replace(/\\/g, '/');
-      const pcN  = PC_PRE.replace(/\\/g, '/');
-      let body = rawN;
-      if (body.startsWith(pcN + '/')) body = body.slice((pcN + '/').length);
-      else if (body.startsWith(pcN)) { body = body.slice(pcN.length); if (body.startsWith('/')) body = body.slice(1); }
-      result = MAC_PRE + '/' + body;
+      const found = stripPcPrefix(raw);
+      if (!found) { setOutput('⚠ 找不到對應磁碟，請確認路徑開頭是否正確', 'error'); return; }
+      setOutput(found.matched.mac + (found.body ? '/' + found.body.replace(/\\/g, '/') : ''), 'ok');
     }
-    setOutput(result, true);
   }
 
   function copyResult() {
-    const text = document.getElementById('output-path').textContent;
-    if (!text || text === '等待輸入路徑...') return;
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = document.getElementById('copy-btn');
-      btn.textContent = '已複製 ✓';
-      btn.classList.add('ok');
-      setTimeout(() => { btn.textContent = '複製'; btn.classList.remove('ok'); }, 1800);
-    });
+    if (!currentResult) return;
+
+    // 方法一：現代 clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(currentResult)
+        .then(() => showCopied())
+        .catch(() => fallbackCopy(currentResult));
+    } else {
+      // 方法二：建立隱藏 textarea 選取後執行 copy 指令
+      fallbackCopy(currentResult);
+    }
+  }
+
+  function fallbackCopy(text) {
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+    document.body.appendChild(tmp);
+    tmp.focus();
+    tmp.select();
+    try {
+      document.execCommand('copy');
+      showCopied();
+    } catch(e) {
+      alert('自動複製失敗，請手動選取結果框的文字後複製');
+    }
+    document.body.removeChild(tmp);
+  }
+
+  function showCopied() {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '已複製 ✓';
+    btn.classList.add('ok');
+    setTimeout(() => {
+      btn.textContent = '複製';
+      btn.classList.remove('ok');
+    }, 1800);
   }
 </script>
 </body>
