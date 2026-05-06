@@ -145,34 +145,19 @@
  /* 每秒一毛哥區塊*/
 
 .maoge-section {
-  display: flex;
-  gap: 0;
-  align-items: stretch;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
   margin-bottom: 2rem;
-  min-height: 220px;
-}
-.maoge-text-col {
-  flex: 6;
-  background: #f9f9f7;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
 }
 .maoge-title {
-  font-size: 2rem;
+  font-size: 17px;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-align: center;
+  color: #1a1a1a;
+  margin-bottom: 8px;
 }
 .maoge-img-col {
-  flex: 4;
   position: relative;
   overflow: hidden;
-  min-height: 220px;
+  border-radius: 16px;
+  height: 220px;
 }
 .maoge-img-col img {
   position: absolute;
@@ -181,12 +166,11 @@
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.2s ease;
 }
 .maoge-img-col img.active {
   opacity: 1;
 }
-
 
  /* 每秒一毛哥區塊*/
 </style>
@@ -199,30 +183,47 @@
     <p class="subtitle">常用小工具</p>
   </div>
  
- <!-- 每秒一毛哥區塊 -->
- <div class="maoge-section">
-  <div class="maoge-text-col">
-    <div class="maoge-title">每秒一毛哥</div>
-  </div>
-  <div class="maoge-img-col" id="carousel">
-    <!-- 把下面的 src 換成毛哥的真實圖片路徑 -->
-    <img src="images/maoge1.jpg" class="active" alt="毛哥照片1">
-    <img src="images/maoge2.jpg" alt="毛哥照片2">
-    <img src="images/maoge3.jpg" alt="毛哥照片3">
-    <img src="images/maoge4.jpg" alt="毛哥照片4">
+<!-- 每秒一毛哥區塊 -->
+<div class="maoge-section">
+  <div class="maoge-title">每秒一毛哥</div>
+  <div class="maoge-img-col">
+    <img id="maoge-img" src="" alt="毛哥" class="active">
   </div>
 </div>
 <!-- 每秒一毛哥區塊結束 -->
- 
+
 <script>
 (function() {
-  const imgs = document.querySelectorAll('#carousel img');
-  let cur = 0;
-  setInterval(() => {
-    imgs[cur].classList.remove('active');
-    cur = (cur + 1) % imgs.length;
-    imgs[cur].classList.add('active');
-  }, 1000);
+  const total = 38;
+  const images = Array.from({length: total}, (_, i) =>
+    'moge/' + String(i + 1).padStart(2, '0') + '.jpg'
+  );
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  let queue = shuffle([...images]);
+  let idx = 0;
+  const img = document.getElementById('maoge-img');
+
+  function showNext() {
+    const src = queue[idx++];
+    if (idx >= queue.length) { queue = shuffle([...images]); idx = 0; }
+    const tmp = new Image();
+    tmp.onload = () => {
+      img.style.opacity = 0;
+      setTimeout(() => { img.src = src; img.style.opacity = 1; }, 150);
+    };
+    tmp.src = src;
+  }
+
+  img.src = queue[idx++];
+  setInterval(showNext, 1000);
 })();
 </script>
   <div class="section-label">現有工具</div>
