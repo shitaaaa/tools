@@ -109,7 +109,6 @@
     margin-bottom: 12px;
   }
 
-  /* 結果框本身可選取，方便手動複製 */
   .result-box {
     width: 100%;
     background: #f7f6f4;
@@ -353,20 +352,19 @@
     } else {
       const found = stripPcPrefix(raw);
       if (!found) { setOutput('⚠ 找不到對應磁碟，請確認路徑開頭是否正確', 'error'); return; }
-      setOutput(found.matched.mac + (found.body ? '/' + found.body.replace(/\\/g, '/') : ''), 'ok');
+      // ← 這裡加上 /Volumes/ 前綴
+      const body = found.body ? '/' + found.body.replace(/\\/g, '/') : '';
+      setOutput('/Volumes/' + found.matched.mac + body, 'ok');
     }
   }
 
   function copyResult() {
     if (!currentResult) return;
-
-    // 方法一：現代 clipboard API
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(currentResult)
         .then(() => showCopied())
         .catch(() => fallbackCopy(currentResult));
     } else {
-      // 方法二：建立隱藏 textarea 選取後執行 copy 指令
       fallbackCopy(currentResult);
     }
   }
