@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上架素材規範檢查工具</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3248;
+    --blue: #3b82f6;
+    --blue-dim: #1d3a6e;
+    --green: #22c55e;
+    --green-dim: #14532d;
+    --red: #ef4444;
+    --red-dim: #450a0a;
+    --amber: #f59e0b;
+    --amber-dim: #451a03;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .app {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header p {
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-size: 13px;
+  }
+
+  /* Drop zone */
+  #dropZone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 56px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--surface);
+    position: relative;
+  }
+  #dropZone:hover, #dropZone.drag-over {
+    border-color: var(--blue);
+    background: #1a2540;
+  }
+  #dropZone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+  .drop-icon {
+    font-size: 42px;
+    margin-bottom: 14px;
+    display: block;
+  }
+  .drop-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .drop-sub {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .drop-hint {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .drop-hint span {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* Progress */
+  #progressArea {
+    display: none;
+    margin-top: 24px;
+  }
+  .progress-bar-wrap {
+    background: var(--surface);
+    border-radius: 6px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 6px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+  .progress-label {
+    color: var(--text-muted);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Summary */
+  #summary {
+    display: none;
+    margin-top: 24px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: gap;
+    gap: 12px;
+  }
+  .summary-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+  .stat-num {
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .stat-num.blue { color: var(--blue); }
+  .stat-num.green { color: var(--green); }
+  .stat-num.red { color: var(--red); }
+  .btn-reset {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-reset:hover { background: var(--border); }
+
+  /* Results */
+  #results {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Product card */
+  .product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .product-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    gap: 12px;
+  }
+  .product-header:hover { background: var(--surface2); }
+  .product-name {
+    font-weight: 600;
+    font-size: 14px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .product-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .badge-pass { background: var(--green-dim); color: var(--green); border: 1px solid #166534; }
+  .badge-fail { background: var(--red-dim); color: var(--red); border: 1px solid #7f1d1d; }
+  .badge-warn { background: var(--amber-dim); color: var(--amber); border: 1px solid #78350f; }
+  .chevron { color: var(--text-muted); transition: transform 0.2s; font-size: 12px; }
+  .product-card.open .chevron { transform: rotate(90deg); }
+
+  /* Category list */
+  .category-list {
+    display: none;
+    border-top: 1px solid var(--border);
+  }
+  .product-card.open .category-list { display: block; }
+
+  .category-row {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .category-row:last-child { border-bottom: none; }
+  .cat-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .cat-body { flex: 1; min-width: 0; }
+  .cat-title {
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .cat-label-tag {
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+  .tag-required { background: #1e3a5f; color: #60a5fa; }
+  .tag-optional { background: #1a2a1a; color: #4ade80; }
+  .tag-conditional { background: #3a2a00; color: #fbbf24; }
+
+  .cat-errors {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .error-item {
+    font-size: 12px;
+    color: #fca5a5;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .error-item::before { content: '•'; flex-shrink: 0; margin-top: 1px; }
+  .warn-item {
+    font-size: 12px;
+    color: #fcd34d;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .warn-item::before { content: '•'; flex-shrink: 0; margin-top: 1px; }
+  .info-item {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .info-item::before { content: '•'; flex-shrink: 0; margin-top: 1px; }
+
+  .file-list {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .file-entry {
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+  .file-entry-name {
+    color: var(--text-dim);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    word-break: break-all;
+    margin-bottom: 3px;
+  }
+  .file-entry-meta {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+  .file-entry-errors { display: flex; flex-direction: column; gap: 2px; }
+
+  .pass-msg {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Status column */
+  .cat-status {
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .status-pass { color: var(--green); }
+  .status-fail { color: var(--red); }
+  .status-warn { color: var(--amber); }
+  .status-missing { color: var(--red); }
+  .status-skip { color: var(--text-muted); }
+
+  /* Empty / loading states */
+  .empty-msg {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 40px;
+    font-size: 14px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <h1>📋 上架素材規範檢查工具</h1>
+    <p>上傳品項資料夾，自動檢查主圖、情境圖、去背、內文圖等素材是否符合上架規範</p>
+  </div>
+
+  <div id="dropZone">
+    <input type="file" id="fileInput" webkitdirectory multiple accept="image/*,.psd,.psb">
+    <span class="drop-icon">📁</span>
+    <div class="drop-title">拖曳資料夾到此處，或點擊選擇</div>
+    <div class="drop-sub">支援一次拖入多個品項資料夾，或整個品項集合資料夾</div>
+    <div class="drop-hint">
+      <span>✅ 主圖</span>
+      <span>✅ 情境圖</span>
+      <span>✅ 去背PNG/JPG</span>
+      <span>✅ 內文圖</span>
+      <span>⚙️ 正方形內文圖</span>
+      <span>⚙️ 其他</span>
+      <span>📂 支援多品項同時拖入</span>
+    </div>
+  </div>
+
+  <div id="progressArea">
+    <div class="progress-label">
+      <span id="progressText">分析中…</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </div>
+
+  <div id="summary">
+    <div class="summary-stats">
+      <div class="stat"><span class="stat-num blue" id="totalCount">0</span><span>個品項</span></div>
+      <div class="stat"><span class="stat-num green" id="passCount">0</span><span>全部通過</span></div>
+      <div class="stat"><span class="stat-num red" id="failCount">0</span><span>有問題</span></div>
+    </div>
+    <button class="btn-reset" onclick="resetApp()">↩ 重新上傳</button>
+  </div>
+
+  <div id="results"></div>
+
+</div>
+
+<script>
+// ─── Skip patterns ────────────────────────────────────────────────
+const SKIP_NAMES = /^(\.DS_Store|Thumbs\.db|desktop\.ini|\._.*)$/i;
+const SKIP_EXTS  = /\.(psd|psb|ai|eps|indd|xd|sketch|fig|tif|tiff|bmp|webp|svg|pdf|xlsx?|docx?|zip|rar|7z)$/i;
+const SKIP_DIRS  = /^(source|sorce|src|素材|\.git|__MACOSX)$/i;
+const IMAGE_EXTS = /\.(jpe?g|png)$/i;
+
+function hasChinese(s) {
+  return /[一-鿿㐀-䶿豈-﫿⺀-⻿]/.test(s);
+}
+function bytesToKB(b) { return b / 1024; }
+function fmt(kb) { return kb < 1024 ? kb.toFixed(1) + ' KB' : (kb/1024).toFixed(2) + ' MB'; }
+function fmtBytes(b) { return fmt(bytesToKB(b)); }
+
+// ─── Get image dimensions ─────────────────────────────────────────
+function getImageDimensions(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve({ w: img.naturalWidth, h: img.naturalHeight }); };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve({ w: 0, h: 0 }); };
+    img.src = url;
+  });
+}
+
+// ─── Parse folder structure ───────────────────────────────────────
+function parseFiles(fileList) {
+  // Build: { productKey: { productName, categories: { ... } } }
+  const products = {};
+
+  const addFile = (productKey, productName, category, file, basename) => {
+    if (!products[productKey]) {
+      products[productKey] = {
+        name: productName,
+        categories: {
+          main600: [], main1000: [], mainUnknown: [],
+          situation: [], removeBackground: [],
+          images: [], all: [], all960: [],
+          images1000: [], other: [], rootUnknown: [], unknown: []
+        }
+      };
+    }
+    products[productKey].categories[category].push({ file, basename });
+  };
+
+  for (const file of fileList) {
+    const path = file.webkitRelativePath || file.name;
+    const parts = path.split('/');
+    const basename = parts[parts.length - 1];
+
+    // Skip unwanted files
+    if (SKIP_NAMES.test(basename)) continue;
+    if (SKIP_EXTS.test(basename)) continue;
+    if (!IMAGE_EXTS.test(basename)) continue;
+
+    // Skip source/sorce directories anywhere in path
+    const isInSkipDir = parts.slice(0, -1).some(p => SKIP_DIRS.test(p));
+    if (isInSkipDir) continue;
+
+    // Determine folder depth
+    // parts[0] = root (either collection or product)
+    // If depth >= 3 and parts[1] looks like a product (has main/, images/ etc) use that
+    // We try to detect: is parts[0] a collection folder?
+    // Strategy: if parts.length === 2, parts[0] is the product
+    // if parts.length >= 3, parts[0] is collection, parts[1] is product
+    // We'll group by detecting the level where known subfolders appear
+
+    let productIdx, subpathParts;
+
+    if (parts.length === 2) {
+      // file directly in root: root/filename → treat root as product
+      productIdx = 0;
+      subpathParts = parts.slice(1);
+    } else {
+      // Heuristic: if parts[1] is a known subfolder name, parts[0] is the product
+      const knownSubfolders = /^(main|images|images-1000)$/i;
+      if (knownSubfolders.test(parts[1])) {
+        productIdx = 0;
+        subpathParts = parts.slice(1);
+      } else {
+        // parts[0] = collection, parts[1] = product
+        productIdx = 1;
+        subpathParts = parts.slice(2);
+      }
+    }
+
+    const productName = parts[productIdx];
+    const productKey = parts.slice(0, productIdx + 1).join('/');
+    const subpath = subpathParts.join('/');
+
+    // Categorize
+    let category = 'unknown';
+
+    if (subpathParts.length === 1) {
+      // Root-level file in product folder
+      if (/-960all_/i.test(basename)) category = 'all960';
+      else if (/-all_/i.test(basename)) category = 'all';
+      else if (/^all-/i.test(basename)) category = 'other';
+      else category = 'rootUnknown';
+    } else {
+      const sub = subpath.toLowerCase();
+      // Check if in a skip dir inside product
+      const inSkip = subpathParts.slice(0, -1).some(p => SKIP_DIRS.test(p));
+      if (inSkip) continue;
+
+      if (sub.startsWith('main/') && (sub.includes('/情境/') || sub.includes('/situation/'))) {
+        category = 'situation';
+      } else if (sub.startsWith('main/') && (sub.includes('/去背/') || sub.includes('/background/'))) {
+        category = 'removeBackground';
+      } else if (sub.startsWith('main/')) {
+        if (/-600-main\./i.test(basename)) category = 'main600';
+        else if (/-1000-main\./i.test(basename)) category = 'main1000';
+        else category = 'mainUnknown';
+      } else if (sub.startsWith('images-1000/')) {
+        category = 'images1000';
+      } else if (sub.startsWith('images/')) {
+        category = 'images';
+      } else {
+        category = 'unknown';
+      }
+    }
+
+    addFile(productKey, productName, category, file, basename);
+  }
+
+  return products;
+}
+
+// ─── Check rules ──────────────────────────────────────────────────
+async function checkProduct(productData, onProgress) {
+  const cats = productData.categories;
+  const results = [];
+  let total = 0;
+  let done = 0;
+
+  // Count all files to check
+  const allCats = Object.values(cats);
+  allCats.forEach(arr => total += arr.length);
+
+  async function checkFiles(fileEntries, rules) {
+    const checked = [];
+    for (const { file, basename } of fileEntries) {
+      const kb = bytesToKB(file.size);
+      const dims = await getImageDimensions(file);
+      done++;
+      onProgress && onProgress(done / Math.max(total, 1));
+      const errors = [];
+
+      if (hasChinese(basename)) {
+        errors.push(`檔名含有中文：「${basename}」`);
+      }
+      if (rules.exactW && dims.w !== rules.exactW) {
+        errors.push(`寬度錯誤：${dims.w}px（應為 ${rules.exactW}px）`);
+      }
+      if (rules.exactH && dims.h !== rules.exactH) {
+        errors.push(`高度錯誤：${dims.h}px（應為 ${rules.exactH}px）`);
+      }
+      if (rules.maxW && dims.w > rules.maxW) {
+        errors.push(`寬度 ${dims.w}px 超出上限 ${rules.maxW}px`);
+      }
+      if (rules.exactW && dims.w !== 0 && dims.w !== rules.exactW && !rules.exactH) {
+        // already covered
+      }
+      if (rules.maxH && dims.h > rules.maxH) {
+        errors.push(`高度 ${dims.h}px 超出上限 ${rules.maxH}px（應為 ${rules.maxH}px 以內）`);
+      }
+      if (rules.minKB && kb < rules.minKB) {
+        errors.push(`檔案過小：${fmt(kb)}（下限 ${rules.minKB} KB）`);
+      }
+      if (rules.maxKB && kb > rules.maxKB) {
+        errors.push(`檔案過大：${fmt(kb)}（上限 ${fmtKB(rules.maxKB)}）`);
+      }
+      checked.push({ name: basename, size: file.size, kb, w: dims.w, h: dims.h, errors });
+    }
+    return checked;
+  }
+
+  function fmtKB(kb) { return kb >= 1024 ? (kb/1024).toFixed(0) + ' MB' : kb + ' KB'; }
+
+  // ── 主圖 600 ──────────────────────────────────────
+  {
+    const files = await checkFiles(cats.main600, { exactW: 600, exactH: 600, minKB: 50, maxKB: 400 });
+    const genErrors = [];
+    if (files.length === 0) genErrors.push('缺少主圖 600×600（品號-600-main）');
+    if (files.length > 1) genErrors.push(`數量超過限制：${files.length} 張（上限 1 張）`);
+    results.push({
+      id: 'main600', label: '主圖 600×600', tag: 'required',
+      files, genErrors,
+      status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
+    });
+  }
+
+  // ── 主圖 1000 ─────────────────────────────────────
+  {
+    const files = await checkFiles(cats.main1000, { exactW: 1000, exactH: 1000, minKB: 50, maxKB: 400 });
+    const genErrors = [];
+    if (files.length === 0) genErrors.push('缺少主圖 1000×1000（品號-1000-main）');
+    if (files.length > 1) genErrors.push(`數量超過限制：${files.length} 張（上限 1 張）`);
+    results.push({
+      id: 'main1000', label: '主圖 1000×1000', tag: 'required',
+      files, genErrors,
+      status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
+    });
+  }
+
+  // ── 情境圖 ────────────────────────────────────────
+  {
+    const files = await checkFiles(cats.situation, { exactW: 1000, exactH: 1000, minKB: 50, maxKB: 400 });
+    const genErrors = [];
+    if (files.length === 0) genErrors.push('缺少情境圖（main/情境/ 資料夾）');
+    results.push({
+      id: 'situation', label: '情境圖', tag: 'required',
+      files, genErrors,
+      status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
+    });
+  }
+
+  // ── 去背 PNG/JPG ──────────────────────────────────
+  {
+    const rbFiles = cats.removeBackground;
+    const genErrors = [];
+
+    // Separate by size pattern
+    const rb1000 = rbFiles.filter(f => /-1000\./i.test(f.basename) && !/-1000-main\./i.test(f.basename));
+    const rb1500 = rbFiles.filter(f => /-1500\./i.test(f.basename));
+    const rb1000png = rb1000.filter(f => /\.png$/i.test(f.basename));
+    const rb1000jpg = rb1000.filter(f => /\.(jpe?g)$/i.test(f.basename));
+    const rb1500png = rb1500.filter(f => /\.png$/i.test(f.basename));
+    const rb1500jpg = rb1500.filter(f => /\.(jpe?g)$/i.test(f.basename));
+
+    if (rbFiles.length === 0) genErrors.push('缺少去背圖（main/去背/ 資料夾）');
+    else {
+      if (rb1000png.length === 0) genErrors.push('缺少 品號-1000.png（去背 1000×1000 PNG）');
+      if (rb1000jpg.length === 0) genErrors.push('缺少 品號-1000.jpg（去背 1000×1000 JPG）');
+      if (rb1500png.length === 0) genErrors.push('缺少 品號-1500.png（去背 1500×1500 PNG）');
+      if (rb1500jpg.length === 0) genErrors.push('缺少 品號-1500.jpg（去背 1500×1500 JPG）');
+    }
+
+    // Check 1000 files
+    const files1000 = await checkFiles([...rb1000png, ...rb1000jpg], { exactW: 1000, exactH: 1000, minKB: 50, maxKB: 400 });
+    const files1500 = await checkFiles([...rb1500png, ...rb1500jpg], { exactW: 1500, exactH: 1500, minKB: 50, maxKB: 400 });
+    const files = [...files1000, ...files1500];
+
+    results.push({
+      id: 'removeBackground', label: '去背 PNG/JPG', tag: 'required',
+      files, genErrors,
+      status: (rbFiles.length === 0) ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
+    });
+  }
+
+  // ── 內文圖 images/ ────────────────────────────────
+  {
+    const files = await checkFiles(cats.images, { exactW: 1000, maxH: 1200, minKB: 200, maxKB: 400 });
+    const genErrors = [];
+    if (files.length === 0) genErrors.push('缺少內文圖（images/ 資料夾）');
+    if (files.length > 12) genErrors.push(`數量超過限制：${files.length} 張（上限 12 張）`);
+    const hasNonSquare = files.some(f => f.w !== f.h);
+    results.push({
+      id: 'images', label: `內文圖 (images/)`, tag: 'required',
+      files, genErrors, hasNonSquare,
+      status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
+    });
+  }
+
+  // ── 最外層 all ────────────────────────────────────
+  {
+    const files = await checkFiles(cats.all, { exactW: 1000, maxH: 9000, maxKB: 2048 });
+    const genErrors = [];
+    if (files.length === 0) genErrors.push('缺少最外層內文圖（品號-all_01）');
+    results.push({
+      id: 'all', label: '最外層內文圖 (all)', tag: 'required',
+      files, genErrors,
+      status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
+    });
+  }
+
+  // ── 最外層 960all ─────────────────────────────────
+  {
+    const files = await checkFiles(cats.all960, { exactW: 960, maxH: 9000, maxKB: 2048 });
+    const genErrors = [];
+    if (files.length === 0) genErrors.push('缺少最外層內文圖（品號-960all_01）');
+    results.push({
+      id: 'all960', label: '最外層內文圖 (960all)', tag: 'required',
+      files, genErrors,
+      status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
+    });
+  }
+
+  // ── 正方形內文圖 images-1000/ ─────────────────────
+  {
+    const imagesResult = results.find(r => r.id === 'images');
+    const hasNonSquare = imagesResult && imagesResult.files.some(f => f.w !== f.h);
+    const isRequired = hasNonSquare;
+    const files = await checkFiles(cats.images1000, { exactW: 1000, exactH: 1000, maxKB: 2048 });
+    const genErrors = [];
+    if (isRequired && files.length === 0) genErrors.push('images/ 含非正方形圖片，需補充正方形內文圖（images-1000/）');
+    if (files.length > 14) genErrors.push(`數量超過限制：${files.length} 張（上限 14 張）`);
+
+    let status = 'skip';
+    if (files.length > 0 || isRequired) {
+      status = (genErrors.length + files.filter(f=>f.errors.length).length > 0) ? (isRequired ? 'fail' : 'warn') : 'pass';
+    }
+    if (isRequired && files.length === 0) status = 'fail';
+
+    results.push({
+      id: 'images1000', label: '正方形內文圖 (images-1000/) 蝦皮用', tag: isRequired ? 'conditional' : 'optional',
+      files, genErrors, isRequired, status
+    });
+  }
+
+  // ── 其他 ──────────────────────────────────────────
+  {
+    const files = await checkFiles(cats.other, { exactW: 1000, exactH: 1000, minKB: 200, maxKB: 400 });
+    const genErrors = [];
+    if (files.length > 3) genErrors.push(`數量超過限制：${files.length} 張（上限 3 張）`);
+    results.push({
+      id: 'other', label: '其他 (all-用途)', tag: 'optional',
+      files, genErrors,
+      status: files.length === 0 ? 'skip' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'warn' : 'pass')
+    });
+  }
+
+  // ── 未知根目錄檔案 ────────────────────────────────
+  if (cats.rootUnknown.length > 0) {
+    const files = cats.rootUnknown.map(({ file, basename }) => ({
+      name: basename, size: file.size, kb: bytesToKB(file.size), w: 0, h: 0,
+      errors: ['無法辨識此檔案用途，請確認命名是否符合規範']
+    }));
+    results.push({
+      id: 'rootUnknown', label: '無法辨識的根目錄檔案', tag: 'optional',
+      files, genErrors: [],
+      status: 'warn'
+    });
+  }
+
+  return results;
+}
+
+// ─── Render ───────────────────────────────────────────────────────
+function statusIcon(status) {
+  return { pass: '✅', fail: '❌', missing: '❌', warn: '⚠️', skip: '—' }[status] || '—';
+}
+function statusText(status) {
+  return { pass: '通過', fail: '有問題', missing: '缺少', warn: '注意', skip: '略過' }[status] || '';
+}
+function statusClass(status) {
+  return { pass: 'status-pass', fail: 'status-fail', missing: 'status-missing', warn: 'status-warn', skip: 'status-skip' }[status] || '';
+}
+function tagLabel(tag) {
+  if (tag === 'required') return '<span class="cat-label-tag tag-required">必要</span>';
+  if (tag === 'optional') return '<span class="cat-label-tag tag-optional">非必要</span>';
+  if (tag === 'conditional') return '<span class="cat-label-tag tag-conditional">條件必要</span>';
+  return '';
+}
+function badgeHtml(status) {
+  const cls = { pass: 'badge-pass', fail: 'badge-fail', warn: 'badge-warn' }[status] || 'badge-warn';
+  const txt = { pass: '全部通過', fail: '有問題', warn: '注意' }[status] || '有問題';
+  return `<span class="badge ${cls}">${txt}</span>`;
+}
+function overallStatus(catResults) {
+  if (catResults.some(r => r.status === 'fail' || r.status === 'missing')) return 'fail';
+  if (catResults.some(r => r.status === 'warn')) return 'warn';
+  return 'pass';
+}
+
+function renderProduct(productName, catResults, idx) {
+  const overall = overallStatus(catResults);
+  const card = document.createElement('div');
+  card.className = 'product-card';
+  if (idx === 0) card.classList.add('open');
+
+  const header = document.createElement('div');
+  header.className = 'product-header';
+  header.innerHTML = `
+    <span class="product-name" title="${productName}">${productName}</span>
+    <div class="product-meta">
+      ${badgeHtml(overall)}
+      <span class="chevron">▶</span>
+    </div>
+  `;
+  header.onclick = () => card.classList.toggle('open');
+
+  const catList = document.createElement('div');
+  catList.className = 'category-list';
+
+  for (const cat of catResults) {
+    const row = document.createElement('div');
+    row.className = 'category-row';
+
+    const hasFileErrors = cat.files && cat.files.some(f => f.errors && f.errors.length > 0);
+    const hasGenErrors = cat.genErrors && cat.genErrors.length > 0;
+    const hasAnyError = hasFileErrors || hasGenErrors;
+
+    let fileListHtml = '';
+    if (cat.files && cat.files.length > 0) {
+      // Only show files that have errors, or if status is pass show all briefly
+      const toShow = cat.status === 'pass'
+        ? cat.files.slice(0, 3)
+        : cat.files.filter(f => f.errors && f.errors.length > 0);
+
+      if (toShow.length > 0) {
+        fileListHtml = '<div class="file-list">' + toShow.map(f => {
+          const meta = f.w ? `${f.w}×${f.h}px · ${fmt(f.kb)}` : fmtBytes(f.size);
+          const errHtml = f.errors.length > 0
+            ? '<div class="file-entry-errors">' + f.errors.map(e => `<div class="error-item">${e}</div>`).join('') + '</div>'
+            : '';
+          return `<div class="file-entry">
+            <div class="file-entry-name">${f.name}</div>
+            <div class="file-entry-meta">${meta}</div>
+            ${errHtml}
+          </div>`;
+        }).join('') + '</div>';
+      }
+    }
+
+    let bodyContent = '';
+    if (cat.status === 'skip') {
+      bodyContent = `<div class="pass-msg">—（此類別未偵測到檔案）</div>`;
+    } else if (cat.status === 'pass') {
+      const count = cat.files.length;
+      bodyContent = `<div class="pass-msg">✓ ${count} 個檔案，全部符合規範</div>`;
+    } else {
+      const genErrHtml = hasGenErrors
+        ? cat.genErrors.map(e => `<div class="error-item">${e}</div>`).join('')
+        : '';
+      bodyContent = `<div class="cat-errors">${genErrHtml}</div>${fileListHtml}`;
+    }
+
+    row.innerHTML = `
+      <span class="cat-icon">${statusIcon(cat.status)}</span>
+      <div class="cat-body">
+        <div class="cat-title">${cat.label} ${tagLabel(cat.tag)}</div>
+        ${bodyContent}
+      </div>
+      <div class="cat-status ${statusClass(cat.status)}">${statusText(cat.status)}</div>
+    `;
+    catList.appendChild(row);
+  }
+
+  card.appendChild(header);
+  card.appendChild(catList);
+  return card;
+}
+
+// ─── Main flow ────────────────────────────────────────────────────
+let running = false;
+
+async function processFiles(files) {
+  if (running) return;
+  running = true;
+
+  const dropZone = document.getElementById('dropZone');
+  const progressArea = document.getElementById('progressArea');
+  const summaryEl = document.getElementById('summary');
+  const resultsEl = document.getElementById('results');
+
+  dropZone.style.display = 'none';
+  progressArea.style.display = 'block';
+  summaryEl.style.display = 'none';
+  resultsEl.innerHTML = '';
+
+  setProgress(0, '解析資料夾結構…');
+
+  const products = parseFiles(files);
+  const productKeys = Object.keys(products);
+
+  if (productKeys.length === 0) {
+    progressArea.style.display = 'none';
+    dropZone.style.display = 'block';
+    alert('找不到有效的圖片檔案。請確認上傳的資料夾包含 main/、images/ 等子目錄，或圖片檔案。');
+    running = false;
+    return;
+  }
+
+  let totalPass = 0, totalFail = 0;
+  const productResults = [];
+
+  for (let i = 0; i < productKeys.length; i++) {
+    const key = productKeys[i];
+    const product = products[key];
+    setProgress(i / productKeys.length, `檢查中（${i + 1}/${productKeys.length}）：${product.name}`);
+
+    const catResults = await checkProduct(product, (pct) => {
+      setProgress((i + pct) / productKeys.length, `檢查中（${i + 1}/${productKeys.length}）：${product.name}`);
+    });
+
+    const overall = overallStatus(catResults);
+    if (overall === 'pass') totalPass++;
+    else totalFail++;
+
+    productResults.push({ name: product.name, catResults });
+  }
+
+  setProgress(1, '完成');
+  await new Promise(r => setTimeout(r, 300));
+
+  progressArea.style.display = 'none';
+  summaryEl.style.display = 'flex';
+  document.getElementById('totalCount').textContent = productKeys.length;
+  document.getElementById('passCount').textContent = totalPass;
+  document.getElementById('failCount').textContent = totalFail;
+
+  for (let i = 0; i < productResults.length; i++) {
+    const { name, catResults } = productResults[i];
+    const card = renderProduct(name, catResults, i);
+    resultsEl.appendChild(card);
+  }
+
+  running = false;
+}
+
+function setProgress(pct, label) {
+  document.getElementById('progressBar').style.width = (pct * 100).toFixed(0) + '%';
+  document.getElementById('progressPct').textContent = (pct * 100).toFixed(0) + '%';
+  document.getElementById('progressText').textContent = label;
+}
+
+function resetApp() {
+  document.getElementById('dropZone').style.display = 'block';
+  document.getElementById('progressArea').style.display = 'none';
+  document.getElementById('summary').style.display = 'none';
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('fileInput').value = '';
+  running = false;
+}
+
+// ─── Event listeners ──────────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  if (e.target.files.length > 0) processFiles(e.target.files);
+});
+
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const items = e.dataTransfer.items;
+  if (!items || items.length === 0) return;
+
+  const allFiles = [];
+  const promises = [];
+
+  for (const item of items) {
+    const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+    if (entry && entry.isDirectory) {
+      promises.push(readDirectoryEntry(entry, [entry.name]).then(files => allFiles.push(...files)));
+    } else if (entry && entry.isFile) {
+      promises.push(new Promise(r => entry.file(f => { allFiles.push(f); r(); })));
+    }
+  }
+
+  await Promise.all(promises);
+  if (allFiles.length > 0) processFiles(allFiles);
+});
+
+// Read directory recursively via DataTransferItem API
+function readDirectoryEntry(dirEntry, pathParts) {
+  return new Promise((resolve) => {
+    const reader = dirEntry.createReader();
+    const allFiles = [];
+    const readBatch = () => {
+      reader.readEntries(async (entries) => {
+        if (entries.length === 0) { resolve(allFiles); return; }
+        for (const entry of entries) {
+          const entryPath = [...pathParts, entry.name];
+          if (entry.isDirectory) {
+            const subFiles = await readDirectoryEntry(entry, entryPath);
+            allFiles.push(...subFiles);
+          } else if (entry.isFile) {
+            const file = await new Promise(r => entry.file(r));
+            Object.defineProperty(file, 'webkitRelativePath', {
+              value: entryPath.join('/'),
+              configurable: true,
+              writable: true
+            });
+            allFiles.push(file);
+          }
+        }
+        readBatch();
+      });
+    };
+    readBatch();
+  });
+}
+</script>
+</body>
+</html>
