@@ -519,7 +519,7 @@ function parseFiles(fileList) {
 
       if (sub.startsWith('main/') && (sub.includes('/情境/') || sub.includes('/situation/'))) {
         category = 'situation';
-      } else if (sub.startsWith('main/') && (sub.includes('/去背/') || sub.includes('/background/'))) {
+      } else if (sub.startsWith('main/') && (sub.includes('/去背/') || sub.includes('/白背/') || sub.includes('/background/'))) {
         category = 'removeBackground';
       } else if (sub.startsWith('main/')) {
         if (/-600-main\./i.test(basename)) category = 'main600';
@@ -642,12 +642,12 @@ async function checkProduct(productData, onProgress) {
     const rb1500png = rb1500.filter(f => /\.png$/i.test(f.basename));
     const rb1500jpg = rb1500.filter(f => /\.(jpe?g)$/i.test(f.basename));
 
-    if (rbFiles.length === 0) genErrors.push('缺少去背圖（main/去背/ 資料夾）');
+    if (rbFiles.length === 0) genErrors.push('缺少去背／白背圖（main/去背/ 或 main/白背/ 資料夾）');
     else {
-      if (rb1000png.length === 0) genErrors.push('缺少 品號-1000.png（去背 1000×1000 PNG）');
-      if (rb1000jpg.length === 0) genErrors.push('缺少 品號-1000.jpg（去背 1000×1000 JPG）');
-      if (rb1500png.length === 0) genErrors.push('缺少 品號-1500.png（去背 1500×1500 PNG）');
-      if (rb1500jpg.length === 0) genErrors.push('缺少 品號-1500.jpg（去背 1500×1500 JPG）');
+      if (rb1000png.length === 0) genErrors.push('缺少 品號-1000.png（去背／白背 1000×1000 PNG）');
+      if (rb1000jpg.length === 0) genErrors.push('缺少 品號-1000.jpg（去背／白背 1000×1000 JPG）');
+      if (rb1500png.length === 0) genErrors.push('缺少 品號-1500.png（去背／白背 1500×1500 PNG）');
+      if (rb1500jpg.length === 0) genErrors.push('缺少 品號-1500.jpg（去背／白背 1500×1500 JPG）');
     }
 
     // Check 1000 files
@@ -656,7 +656,7 @@ async function checkProduct(productData, onProgress) {
     const files = [...files1000, ...files1500];
 
     results.push({
-      id: 'removeBackground', label: '去背 PNG/JPG', tag: 'required',
+      id: 'removeBackground', label: '去背／白背 PNG/JPG', tag: 'required',
       files, genErrors,
       status: (rbFiles.length === 0) ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
     });
@@ -703,15 +703,26 @@ async function checkProduct(productData, onProgress) {
   // ── 正方形內文圖 images-1000/ ─────────────────────
   {
     const imagesResult = results.find(r => r.id === 'images');
-    // 只要 images/ 有任何一張不是 1000x1000，正方形內文圖就為必要
-    // 若 images/ 全部都是 1000x1000（含 0 張），則不必要
     const imagesFiles = imagesResult ? imagesResult.files : [];
-    const allSquare = imagesFiles.length > 0 && imagesFiles.every(f => f.w === 1000 && f.h === 1000);
     const hasNonSquare = imagesFiles.some(f => f.w !== 0 && (f.w !== 1000 || f.h !== 1000));
     const isRequired = hasNonSquare;
     const files = await checkFiles(cats.images1000, { exactW: 1000, exactH: 1000, maxKB: 2048 });
-    const genErrors = [];
-    if (isRequired && files.length === 0) genErrors.push('images/ 含非 1000×1000 圖片，需補充正方形內文圖（images-1000/）');
+
+    const nonSquareNames = imagesFiles
+      .filter(f => f.w !== 0 && (f.w !== 1000 || f.h !== 1000))
+      .map(f => `${f.name}（${f.w}×${f.h}）`)
+      .join('、');
+
+    const genErrors = []; // 真正影響 status 的錯誤
+    const genInfos  = []; // 參考用資訊，不影響 status
+
+    if (isRequired && files.length === 0) {
+      genErrors.push('images/ 含非 1000×1000 圖片，需補充正方形內文圖（images-1000/）');
+      if (nonSquareNames) genErrors.push(`非正方形檔案：${nonSquareNames}`);
+    }
+    if (isRequired && files.length > 0 && nonSquareNames) {
+      genInfos.push(`非正方形原圖（供參考）：${nonSquareNames}`);
+    }
     if (files.length > 14) genErrors.push(`數量超過限制：${files.length} 張（上限 14 張）`);
 
     let status = 'skip';
@@ -722,7 +733,7 @@ async function checkProduct(productData, onProgress) {
 
     results.push({
       id: 'images1000', label: '正方形內文圖 (images-1000/) 蝦皮用', tag: isRequired ? 'conditional' : 'optional',
-      files, genErrors, isRequired, status
+      files, genErrors, genInfos, isRequired, status
     });
   }
 
@@ -827,12 +838,18 @@ function renderProduct(productName, catResults, idx) {
       bodyContent = `<div class="pass-msg">—（此類別未偵測到檔案）</div>`;
     } else if (cat.status === 'pass') {
       const count = cat.files.length;
-      bodyContent = `<div class="pass-msg">✓ ${count} 個檔案，全部符合規範</div>`;
+      const infoHtml = cat.genInfos && cat.genInfos.length > 0
+        ? cat.genInfos.map(e => `<div class="info-item">${e}</div>`).join('')
+        : '';
+      bodyContent = `<div class="pass-msg">✓ ${count} 個檔案，全部符合規範</div>${infoHtml ? `<div class="cat-errors">${infoHtml}</div>` : ''}`;
     } else {
       const genErrHtml = hasGenErrors
         ? cat.genErrors.map(e => `<div class="error-item">${e}</div>`).join('')
         : '';
-      bodyContent = `<div class="cat-errors">${genErrHtml}</div>${fileListHtml}`;
+      const genInfoHtml = cat.genInfos && cat.genInfos.length > 0
+        ? cat.genInfos.map(e => `<div class="info-item">${e}</div>`).join('')
+        : '';
+      bodyContent = `<div class="cat-errors">${genErrHtml}${genInfoHtml}</div>${fileListHtml}`;
     }
 
     row.innerHTML = `
