@@ -505,8 +505,10 @@ function parseFiles(fileList) {
 
     if (subpathParts.length === 1) {
       // Root-level file in product folder
-      if (/-960all_/i.test(basename)) category = 'all960';
-      else if (/-all_/i.test(basename)) category = 'all';
+      // 支援單張時用 品號-960all 或 品號-960all_01 兩種命名
+      if (/-960all(_\d+)?\./i.test(basename)) category = 'all960';
+      // 支援單張時用 品號-all 或 品號-all_01 兩種命名（但排除 960all）
+      else if (/-all(_\d+)?\./i.test(basename) && !/-960all/i.test(basename)) category = 'all';
       else if (/^all-/i.test(basename)) category = 'other';
       else category = 'rootUnknown';
     } else {
@@ -701,11 +703,15 @@ async function checkProduct(productData, onProgress) {
   // ── 正方形內文圖 images-1000/ ─────────────────────
   {
     const imagesResult = results.find(r => r.id === 'images');
-    const hasNonSquare = imagesResult && imagesResult.files.some(f => f.w !== f.h);
+    // 只要 images/ 有任何一張不是 1000x1000，正方形內文圖就為必要
+    // 若 images/ 全部都是 1000x1000（含 0 張），則不必要
+    const imagesFiles = imagesResult ? imagesResult.files : [];
+    const allSquare = imagesFiles.length > 0 && imagesFiles.every(f => f.w === 1000 && f.h === 1000);
+    const hasNonSquare = imagesFiles.some(f => f.w !== 0 && (f.w !== 1000 || f.h !== 1000));
     const isRequired = hasNonSquare;
     const files = await checkFiles(cats.images1000, { exactW: 1000, exactH: 1000, maxKB: 2048 });
     const genErrors = [];
-    if (isRequired && files.length === 0) genErrors.push('images/ 含非正方形圖片，需補充正方形內文圖（images-1000/）');
+    if (isRequired && files.length === 0) genErrors.push('images/ 含非 1000×1000 圖片，需補充正方形內文圖（images-1000/）');
     if (files.length > 14) genErrors.push(`數量超過限制：${files.length} 張（上限 14 張）`);
 
     let status = 'skip';
@@ -720,17 +726,8 @@ async function checkProduct(productData, onProgress) {
     });
   }
 
-  // ── 其他 ──────────────────────────────────────────
-  {
-    const files = await checkFiles(cats.other, { exactW: 1000, exactH: 1000, minKB: 200, maxKB: 400 });
-    const genErrors = [];
-    if (files.length > 3) genErrors.push(`數量超過限制：${files.length} 張（上限 3 張）`);
-    results.push({
-      id: 'other', label: '其他 (all-用途)', tag: 'optional',
-      files, genErrors,
-      status: files.length === 0 ? 'skip' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'warn' : 'pass')
-    });
-  }
+  // ── 其他 (all-用途)：不顯示，僅靜默歸類 ──────────
+  // 不加入 results，略過顯示
 
   // ── 未知根目錄檔案 ────────────────────────────────
   if (cats.rootUnknown.length > 0) {
