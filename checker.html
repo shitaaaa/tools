@@ -420,7 +420,7 @@ const IMAGE_EXTS = /\.(jpe?g|png)$/i;
 function hasChinese(s) {
   return /[一-鿿㐀-䶿豈-﫿⺀-⻿]/.test(s);
 }
-function bytesToKB(b) { return b / 1024; }
+function bytesToKB(b) { return b / 1000; }
 function fmt(kb) { return kb < 1024 ? kb.toFixed(1) + ' KB' : (kb/1024).toFixed(2) + ' MB'; }
 function fmtBytes(b) { return fmt(bytesToKB(b)); }
 
@@ -668,7 +668,7 @@ async function checkProduct(productData, onProgress) {
     const genErrors = [];
     if (files.length === 0) genErrors.push('缺少內文圖（images/ 資料夾）');
     if (files.length > 12) genErrors.push(`數量超過限制：${files.length} 張（上限 12 張）`);
-    const hasNonSquare = files.some(f => f.w !== f.h);
+    const hasNonSquare = files.some(f => f.w !== 1000 || f.h !== 1000);
     results.push({
       id: 'images', label: `內文圖 (images/)`, tag: 'required',
       files, genErrors, hasNonSquare,
@@ -704,13 +704,14 @@ async function checkProduct(productData, onProgress) {
   {
     const imagesResult = results.find(r => r.id === 'images');
     const imagesFiles = imagesResult ? imagesResult.files : [];
-    const hasNonSquare = imagesFiles.some(f => f.w !== 0 && (f.w !== 1000 || f.h !== 1000));
+    // 非正方形 = 不是 1000×1000（images/ 允許高度到 1200，故 h 可能不是 1000）
+    const hasNonSquare = imagesFiles.some(f => f.w !== 1000 || f.h !== 1000);
     const isRequired = hasNonSquare;
     const files = await checkFiles(cats.images1000, { exactW: 1000, exactH: 1000, maxKB: 2048 });
 
-    const nonSquareNames = imagesFiles
-      .filter(f => f.w !== 0 && (f.w !== 1000 || f.h !== 1000))
-      .map(f => `${f.name}（${f.w}×${f.h}）`)
+    const nonSquareFiles = imagesFiles.filter(f => f.w !== 1000 || f.h !== 1000);
+    const nonSquareNames = nonSquareFiles
+      .map(f => `${f.name}（${f.w || '?'}×${f.h || '?'}）`)
       .join('、');
 
     const genErrors = []; // 真正影響 status 的錯誤
