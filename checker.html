@@ -8,21 +8,30 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #22263a;
-    --border: #2e3248;
-    --blue: #3b82f6;
-    --blue-dim: #1d3a6e;
-    --green: #22c55e;
-    --green-dim: #14532d;
-    --red: #ef4444;
-    --red-dim: #450a0a;
-    --amber: #f59e0b;
-    --amber-dim: #451a03;
-    --text: #e2e8f0;
-    --text-muted: #64748b;
-    --text-dim: #94a3b8;
+    --orange:      #FF9F1C;
+    --orange-lt:   #FFBF69;
+    --teal:        #119DA4;
+    --teal-dk:     #0C7489;
+    --white:       #FFFFFF;
+    --bg:          #F7F8FA;
+    --surface:     #FFFFFF;
+    --surface2:    #F0F2F5;
+    --border:      #E2E6ED;
+    --text:        #1A2030;
+    --text-muted:  #7A8599;
+    --text-dim:    #4A5568;
+    --green:       #16A34A;
+    --green-bg:    #F0FDF4;
+    --green-bd:    #BBF7D0;
+    --red:         #DC2626;
+    --red-bg:      #FEF2F2;
+    --red-bd:      #FECACA;
+    --amber:       #D97706;
+    --amber-bg:    #FFFBEB;
+    --amber-bd:    #FDE68A;
+    --info:        #0891B2;
+    --info-bg:     #F0FDFE;
+    --info-bd:     #A5F3FC;
   }
 
   body {
@@ -30,334 +39,232 @@
     color: var(--text);
     font-family: -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
     min-height: 100vh;
-    padding: 24px 16px 60px;
+    padding: 28px 16px 80px;
     font-size: 14px;
     line-height: 1.6;
   }
 
-  .app {
-    max-width: 960px;
-    margin: 0 auto;
-  }
+  .app { max-width: 980px; margin: 0 auto; }
 
-  /* Header */
+  /* ── Header ── */
   .header {
-    margin-bottom: 32px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  .header h1 {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-    color: var(--text);
+    margin-bottom: 28px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
   }
-  .header p {
-    color: var(--text-muted);
-    margin-top: 6px;
-    font-size: 13px;
-  }
-
-  /* Drop zone */
-  #dropZone {
-    border: 2px dashed var(--border);
+  .header-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--orange), var(--orange-lt));
     border-radius: 12px;
-    padding: 56px 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(255,159,28,0.3);
+  }
+  .header h1 {
+    font-size: 20px; font-weight: 700;
+    letter-spacing: -0.3px; color: var(--text);
+  }
+  .header p { color: var(--text-muted); margin-top: 2px; font-size: 13px; }
+
+  /* ── Drop zone ── */
+  #dropZone {
+    border: 2px dashed var(--orange-lt);
+    border-radius: 14px;
+    padding: 52px 24px;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
     background: var(--surface);
     position: relative;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   }
   #dropZone:hover, #dropZone.drag-over {
-    border-color: var(--blue);
-    background: #1a2540;
+    border-color: var(--orange);
+    background: #FFFBF4;
+    box-shadow: 0 4px 16px rgba(255,159,28,0.12);
   }
   #dropZone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
+    position: absolute; inset: 0; opacity: 0;
+    cursor: pointer; width: 100%; height: 100%;
   }
-  .drop-icon {
-    font-size: 42px;
-    margin-bottom: 14px;
-    display: block;
-  }
+  .drop-icon { font-size: 40px; margin-bottom: 12px; display: block; }
   .drop-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 6px;
+    font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px;
   }
-  .drop-sub {
-    color: var(--text-muted);
-    font-size: 13px;
-  }
+  .drop-sub { color: var(--text-muted); font-size: 13px; }
   .drop-hint {
-    margin-top: 16px;
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
+    margin-top: 18px; display: flex;
+    justify-content: center; gap: 10px; flex-wrap: wrap;
   }
   .drop-hint span {
     background: var(--surface2);
     border: 1px solid var(--border);
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    color: var(--text-dim);
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; color: var(--text-dim);
   }
 
-  /* Progress */
-  #progressArea {
-    display: none;
-    margin-top: 24px;
-  }
+  /* ── Progress ── */
+  #progressArea { display: none; margin-top: 20px; }
   .progress-bar-wrap {
-    background: var(--surface);
-    border-radius: 6px;
-    height: 6px;
-    overflow: hidden;
-    margin-top: 10px;
+    background: var(--surface2); border-radius: 6px;
+    height: 5px; overflow: hidden; margin-top: 8px;
   }
   .progress-bar {
     height: 100%;
-    background: var(--blue);
-    border-radius: 6px;
-    transition: width 0.3s;
-    width: 0%;
+    background: linear-gradient(90deg, var(--orange), var(--orange-lt));
+    border-radius: 6px; transition: width 0.3s; width: 0%;
   }
   .progress-label {
-    color: var(--text-muted);
-    font-size: 13px;
-    display: flex;
-    justify-content: space-between;
+    color: var(--text-muted); font-size: 13px;
+    display: flex; justify-content: space-between;
   }
 
-  /* Summary */
+  /* ── Summary ── */
   #summary {
-    display: none;
-    margin-top: 24px;
+    display: none; margin-top: 20px;
     padding: 16px 20px;
     background: var(--surface);
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid var(--border);
-    display: none;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: gap;
-    gap: 12px;
+    flex-wrap: wrap; gap: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   }
-  .summary-stats {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-  .stat {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-  }
-  .stat-num {
-    font-size: 20px;
-    font-weight: 700;
-  }
-  .stat-num.blue { color: var(--blue); }
+  .summary-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+  .stat { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .stat-num { font-size: 22px; font-weight: 700; }
+  .stat-num.blue  { color: var(--teal); }
   .stat-num.green { color: var(--green); }
-  .stat-num.red { color: var(--red); }
+  .stat-num.red   { color: var(--red); }
   .btn-reset {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: background 0.15s;
-    white-space: nowrap;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 18px; border-radius: 8px;
+    cursor: pointer; font-size: 13px; transition: background 0.15s;
+    white-space: nowrap; font-weight: 500;
   }
   .btn-reset:hover { background: var(--border); }
 
-  /* Results */
-  #results {
-    margin-top: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
+  /* ── Results ── */
+  #results { margin-top: 20px; display: flex; flex-direction: column; gap: 12px; }
 
-  /* Product card */
+  /* ── Product card ── */
   .product-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   }
   .product-header {
     padding: 14px 18px;
-    display: flex;
-    align-items: center;
+    display: flex; align-items: center;
     justify-content: space-between;
-    cursor: pointer;
-    user-select: none;
-    gap: 12px;
+    cursor: pointer; user-select: none; gap: 12px;
+    border-left: 4px solid var(--orange-lt);
+    transition: background 0.15s;
   }
   .product-header:hover { background: var(--surface2); }
+  .product-card.open .product-header { border-left-color: var(--orange); }
   .product-name {
-    font-weight: 600;
-    font-size: 14px;
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-weight: 600; font-size: 14px;
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .product-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
   }
   .badge {
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
+    padding: 3px 11px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
   }
-  .badge-pass { background: var(--green-dim); color: var(--green); border: 1px solid #166534; }
-  .badge-fail { background: var(--red-dim); color: var(--red); border: 1px solid #7f1d1d; }
-  .badge-warn { background: var(--amber-dim); color: var(--amber); border: 1px solid #78350f; }
-  .chevron { color: var(--text-muted); transition: transform 0.2s; font-size: 12px; }
+  .badge-pass { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
+  .badge-fail { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-bd); }
+  .badge-warn { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-bd); }
+  .chevron { color: var(--text-muted); transition: transform 0.2s; font-size: 11px; }
   .product-card.open .chevron { transform: rotate(90deg); }
 
-  /* Category list */
-  .category-list {
-    display: none;
-    border-top: 1px solid var(--border);
-  }
+  /* ── Category list ── */
+  .category-list { display: none; border-top: 1px solid var(--border); }
   .product-card.open .category-list { display: block; }
 
   .category-row {
-    padding: 12px 18px;
+    padding: 12px 18px 12px 22px;
     border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    display: flex; align-items: flex-start; gap: 12px;
   }
   .category-row:last-child { border-bottom: none; }
-  .cat-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .cat-icon { font-size: 15px; flex-shrink: 0; margin-top: 2px; }
   .cat-body { flex: 1; min-width: 0; }
   .cat-title {
-    font-weight: 600;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    font-weight: 600; font-size: 13px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   }
+  .cat-spec {
+    font-size: 11.5px; color: var(--text-muted);
+    margin-top: 2px; line-height: 1.5;
+  }
+
   .cat-label-tag {
-    font-size: 11px;
-    padding: 1px 7px;
-    border-radius: 10px;
-    font-weight: 500;
+    font-size: 11px; padding: 1px 8px;
+    border-radius: 10px; font-weight: 500;
   }
-  .tag-required { background: #1e3a5f; color: #60a5fa; }
-  .tag-optional { background: #1a2a1a; color: #4ade80; }
-  .tag-conditional { background: #3a2a00; color: #fbbf24; }
+  .tag-required    { background: #EFF6FF; color: var(--teal-dk); border: 1px solid #BAE6FD; }
+  .tag-optional    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
+  .tag-conditional { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-bd); }
 
-  .cat-errors {
-    margin-top: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+  .cat-errors { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
   .error-item {
-    font-size: 12px;
-    color: #fca5a5;
-    display: flex;
-    align-items: flex-start;
-    gap: 5px;
+    font-size: 12px; color: var(--red);
+    display: flex; align-items: flex-start; gap: 5px;
+    padding: 4px 8px; background: var(--red-bg);
+    border-radius: 5px; border-left: 3px solid var(--red);
   }
-  .error-item::before { content: '•'; flex-shrink: 0; margin-top: 1px; }
+  .error-item::before { content: '✕'; flex-shrink: 0; }
   .warn-item {
-    font-size: 12px;
-    color: #fcd34d;
-    display: flex;
-    align-items: flex-start;
-    gap: 5px;
+    font-size: 12px; color: var(--amber);
+    display: flex; align-items: flex-start; gap: 5px;
   }
-  .warn-item::before { content: '•'; flex-shrink: 0; margin-top: 1px; }
+  .warn-item::before { content: '•'; flex-shrink: 0; }
   .info-item {
-    font-size: 12px;
-    color: var(--text-muted);
-    display: flex;
-    align-items: flex-start;
-    gap: 5px;
+    font-size: 12px; color: var(--info);
+    display: flex; align-items: flex-start; gap: 5px;
+    padding: 4px 8px; background: var(--info-bg);
+    border-radius: 5px; border-left: 3px solid var(--info-bd);
   }
-  .info-item::before { content: '•'; flex-shrink: 0; margin-top: 1px; }
+  .info-item::before { content: 'ℹ'; flex-shrink: 0; }
 
-  .file-list {
-    margin-top: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
+  .file-list { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
   .file-entry {
-    background: var(--surface2);
-    border-radius: 6px;
-    padding: 7px 10px;
-    font-size: 12px;
+    background: var(--surface2); border-radius: 6px;
+    padding: 7px 10px; font-size: 12px;
+    border: 1px solid var(--border);
   }
   .file-entry-name {
-    color: var(--text-dim);
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    word-break: break-all;
-    margin-bottom: 3px;
+    color: var(--text-dim); font-family: 'SF Mono', 'Fira Code', monospace;
+    word-break: break-all; margin-bottom: 3px;
   }
-  .file-entry-meta {
-    color: var(--text-muted);
-    font-size: 11px;
-    margin-bottom: 3px;
-  }
-  .file-entry-errors { display: flex; flex-direction: column; gap: 2px; }
+  .file-entry-meta { color: var(--text-muted); font-size: 11px; margin-bottom: 3px; }
+  .file-entry-errors { display: flex; flex-direction: column; gap: 3px; margin-top: 3px; }
 
-  .pass-msg {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 4px;
-  }
+  .pass-msg { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
-  /* Status column */
+  /* ── Status column ── */
   .cat-status {
-    flex-shrink: 0;
-    text-align: right;
-    font-size: 12px;
-    margin-top: 2px;
+    flex-shrink: 0; text-align: right;
+    font-size: 12px; margin-top: 2px; font-weight: 500;
   }
-  .status-pass { color: var(--green); }
-  .status-fail { color: var(--red); }
-  .status-warn { color: var(--amber); }
+  .status-pass    { color: var(--green); }
+  .status-fail    { color: var(--red); }
+  .status-warn    { color: var(--amber); }
   .status-missing { color: var(--red); }
-  .status-skip { color: var(--text-muted); }
+  .status-skip    { color: var(--text-muted); }
 
-  /* Empty / loading states */
   .empty-msg {
-    text-align: center;
-    color: var(--text-muted);
-    padding: 40px;
-    font-size: 14px;
+    text-align: center; color: var(--text-muted);
+    padding: 40px; font-size: 14px;
   }
 
-  /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -367,8 +274,11 @@
 <div class="app">
 
   <div class="header">
-    <h1>📋 上架素材規範檢查工具</h1>
-    <p>上傳品項資料夾，自動檢查主圖、情境圖、去背、內文圖等素材是否符合上架規範</p>
+    <div class="header-icon">📋</div>
+    <div>
+      <h1>上架素材規範檢查工具</h1>
+      <p>上傳品項資料夾，自動檢查主圖、情境圖、去背、內文圖等素材是否符合上架規範</p>
+    </div>
   </div>
 
   <div id="dropZone">
@@ -591,29 +501,35 @@ async function checkProduct(productData, onProgress) {
 
   function fmtKB(kb) { return kb >= 1024 ? (kb/1024).toFixed(0) + ' MB' : kb + ' KB'; }
 
-  // ── 主圖 600 ──────────────────────────────────────
+  // ── 主圖 600 & 1000（數量須一致）────────────────────
   {
-    const files = await checkFiles(cats.main600, { exactW: 600, exactH: 600, minKB: 50, maxKB: 400 });
-    const genErrors = [];
-    if (files.length === 0) genErrors.push('缺少主圖 600×600（品號-600-main）');
-    if (files.length > 1) genErrors.push(`數量超過限制：${files.length} 張（上限 1 張）`);
+    const files600  = await checkFiles(cats.main600,  { exactW: 600,  exactH: 600,  minKB: 50, maxKB: 400 });
+    const files1000 = await checkFiles(cats.main1000, { exactW: 1000, exactH: 1000, minKB: 50, maxKB: 400 });
+
+    const genErrors600  = [];
+    const genErrors1000 = [];
+
+    if (files600.length === 0)  genErrors600.push('缺少主圖 600×600（品號-600-main）');
+    if (files1000.length === 0) genErrors1000.push('缺少主圖 1000×1000（品號-1000-main）');
+
+    // 數量一致性跨欄檢查（兩邊都有檔案才比）
+    if (files600.length > 0 && files1000.length > 0 && files600.length !== files1000.length) {
+      const msg = `主圖數量不一致：600×600 有 ${files600.length} 張，1000×1000 有 ${files1000.length} 張（兩者需相同）`;
+      genErrors600.push(msg);
+      genErrors1000.push(msg);
+    }
+
     results.push({
       id: 'main600', label: '主圖 600×600', tag: 'required',
-      files, genErrors,
-      status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
+      files: files600, genErrors: genErrors600,
+      spec: '尺寸 600×600px｜50～400 KB｜資料夾：main/｜檔名：品號-600-main｜需加 logo 隱藏浮水印',
+      status: files600.length === 0 ? 'missing' : (genErrors600.length + files600.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
     });
-  }
-
-  // ── 主圖 1000 ─────────────────────────────────────
-  {
-    const files = await checkFiles(cats.main1000, { exactW: 1000, exactH: 1000, minKB: 50, maxKB: 400 });
-    const genErrors = [];
-    if (files.length === 0) genErrors.push('缺少主圖 1000×1000（品號-1000-main）');
-    if (files.length > 1) genErrors.push(`數量超過限制：${files.length} 張（上限 1 張）`);
     results.push({
       id: 'main1000', label: '主圖 1000×1000', tag: 'required',
-      files, genErrors,
-      status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
+      files: files1000, genErrors: genErrors1000,
+      spec: '尺寸 1000×1000px｜50～400 KB｜資料夾：main/｜檔名：品號-1000-main｜需加 logo 隱藏浮水印｜床墊需含官網主圖及情境主圖',
+      status: files1000.length === 0 ? 'missing' : (genErrors1000.length + files1000.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
     });
   }
 
@@ -624,6 +540,7 @@ async function checkProduct(productData, onProgress) {
     if (files.length === 0) genErrors.push('缺少情境圖（main/情境/ 資料夾）');
     results.push({
       id: 'situation', label: '情境圖', tag: 'required',
+      spec: '尺寸 1000×1000px｜50～400 KB｜資料夾：main/情境/｜檔名：品號-a｜無壓標、無壓框',
       files, genErrors,
       status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
     });
@@ -657,6 +574,7 @@ async function checkProduct(productData, onProgress) {
 
     results.push({
       id: 'removeBackground', label: '去背／白背 PNG/JPG', tag: 'required',
+      spec: '尺寸 1000×1000 或 1500×1500px｜50～400 KB｜資料夾：main/去背/ 或 main/白背/｜PNG、JPG 各一｜無壓標、無壓框｜浮水印置入商品白背不要有',
       files, genErrors,
       status: (rbFiles.length === 0) ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
     });
@@ -671,6 +589,7 @@ async function checkProduct(productData, onProgress) {
     const hasNonSquare = files.some(f => f.w !== 1000 || f.h !== 1000);
     results.push({
       id: 'images', label: `內文圖 (images/)`, tag: 'required',
+      spec: '寬 1000px｜高 1200px 以內｜200～400 KB｜資料夾：images/｜檔名：品號_01～｜上限 12 張（含 TOP 圖、尺寸圖×1、偏運表×2）',
       files, genErrors, hasNonSquare,
       status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
     });
@@ -683,6 +602,7 @@ async function checkProduct(productData, onProgress) {
     if (files.length === 0) genErrors.push('缺少最外層內文圖（品號-all_01）');
     results.push({
       id: 'all', label: '最外層內文圖 (all)', tag: 'required',
+      spec: '寬 1000px｜高 9000px 以內｜2 MB 以內｜資料夾：最外層｜檔名：品號-all_01｜超過 9000px 切兩張（單張時可用品號-all）',
       files, genErrors,
       status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
     });
@@ -695,6 +615,7 @@ async function checkProduct(productData, onProgress) {
     if (files.length === 0) genErrors.push('缺少最外層內文圖（品號-960all_01）');
     results.push({
       id: 'all960', label: '最外層內文圖 (960all)', tag: 'required',
+      spec: '寬 960px｜高 9000px 以內｜2 MB 以內｜資料夾：最外層｜檔名：品號-960all_01｜超過 9000px 切兩張（單張時可用品號-960all）',
       files, genErrors,
       status: files.length === 0 ? 'missing' : (genErrors.length + files.filter(f=>f.errors.length).length > 0 ? 'fail' : 'pass')
     });
@@ -734,6 +655,7 @@ async function checkProduct(productData, onProgress) {
 
     results.push({
       id: 'images1000', label: '正方形內文圖 (images-1000/) 蝦皮用', tag: isRequired ? 'conditional' : 'optional',
+      spec: '尺寸 1000×1000px｜2 MB 以內｜資料夾：images-1000/｜檔名：品號_01～｜上限 14 張｜images/ 含非 1000×1000 圖時必要',
       files, genErrors, genInfos, isRequired, status
     });
   }
@@ -857,6 +779,7 @@ function renderProduct(productName, catResults, idx) {
       <span class="cat-icon">${statusIcon(cat.status)}</span>
       <div class="cat-body">
         <div class="cat-title">${cat.label} ${tagLabel(cat.tag)}</div>
+        ${cat.spec ? `<div class="cat-spec">${cat.spec}</div>` : ''}
         ${bodyContent}
       </div>
       <div class="cat-status ${statusClass(cat.status)}">${statusText(cat.status)}</div>
