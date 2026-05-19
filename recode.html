@@ -164,7 +164,7 @@
 
   function showApp() {
     document.getElementById("login-screen").style.display = "none";
-    document.getElementById("app-screen").style.display = "";
+    document.getElementById("app-screen").style.display = "block";
     document.getElementById("user-name").textContent = currentUser.nickname;
     // 設定今天日期預設值
     document.getElementById("input-date").value = today();
@@ -230,7 +230,7 @@
       records = [];
       localStorage.removeItem("wt_nickname");
       document.getElementById("app-screen").style.display = "none";
-      document.getElementById("login-screen").style.display = "";
+      document.getElementById("login-screen").style.display = "flex";
       document.getElementById("login-btn").disabled = false;
       document.getElementById("login-btn").textContent = "進入";
     });
