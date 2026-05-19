@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工時記錄器</title>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // ⚠️ 請填入你的 Firebase 設定
+  const firebaseConfig = {
+    apiKey: "AIzaSyB1VFg1wtVsa6NYInsVue00wSpKkiP4FGo",
+    authDomain: "recode-5fb20.firebaseapp.com",
+    projectId: "recode-5fb20",
+    storageBucket: "recode-5fb20.firebasestorage.app",
+    messagingSenderId: "333904261286",
+    appId: "1:333904261286:web:625cd2710b762ab4244467",
+    measurementId: "G-HFWQPEFM48"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let currentUser = null; // { nickname, userId, ip }
+  let records = [];
+  let unsubscribe = null;
+
+  // 取得 IP
+  async function getIP() {
+    try {
+      const res = await fetch("https://api.ipify.org?format=json");
+      const data = await res.json();
+      return data.ip;
+    } catch { return "unknown-" + Date.now(); }
+  }
+
+  // 產生 userId = nickname（不同ip同暱稱 → 同人）
+  // 同ip改暱稱 → 不同人（userId以nickname為主）
+  async function login(nickname) {
+    const ip = await getIP();
+    const userId = nickname; // userId = 暱稱（不同ip同暱稱=同人）
+    currentUser = { nickname, userId, ip };
+
+    // 確保 user doc 存在
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      await setDoc(userRef, { nickname, createdAt: new Date().toISOString(), ips: [ip] });
+    } else {
+      // 追加 ip 紀錄（選填，後台可查）
+      const data = userSnap.data();
+      const ips = data.ips || [];
+      if (!ips.includes(ip)) {
+        await updateDoc(userRef, { ips: [...ips, ip] });
+      }
+    }
+
+    localStorage.setItem("wt_nickname", nickname);
+    showApp();
+    listenRecords();
+  }
+
+  function listenRecords() {
+    if (unsubscribe) unsubscribe();
+    const q = query(collection(db, "records"), where("userId", "==", currentUser.userId));
+    unsubscribe = onSnapshot(q, (snap) => {
+      records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      records.sort((a, b) => (b.date + b.createdAt) > (a.date + a.createdAt) ? 1 : -1);
+      renderRecords();
+    });
+  }
+
+  async function addRecord(date, project, content, hours) {
+    const id = "r_" + Date.now();
+    await setDoc(doc(db, "records", id), {
+      userId: currentUser.userId,
+      nickname: currentUser.nickname,
+      date, project, content,
+      hours: parseFloat(hours),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  async function updateRecord(id, date, project, content, hours) {
+    await updateDoc(doc(db, "records", id), {
+      date, project, content,
+      hours: parseFloat(hours),
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  async function deleteRecord(id) {
+    if (!confirm("確定要刪除這筆紀錄嗎？")) return;
+    const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    await deleteDoc(doc(db, "records", id));
+  }
+
+  function renderRecords() {
+    const tbody = document.getElementById("records-body");
+    const total = document.getElementById("total-hours");
+    if (!tbody) return;
+
+    // 篩選
+    const filterMonth = document.getElementById("filter-month")?.value || "";
+    const filterProject = document.getElementById("filter-project")?.value.trim().toLowerCase() || "";
+    let filtered = records.filter(r => {
+      const monthMatch = filterMonth ? r.date.startsWith(filterMonth) : true;
+      const projectMatch = filterProject ? r.project.toLowerCase().includes(filterProject) : true;
+      return monthMatch && projectMatch;
+    });
+
+    // 計算總時數
+    const totalH = filtered.reduce((sum, r) => sum + (r.hours || 0), 0);
+    total.textContent = totalH % 1 === 0 ? totalH : totalH.toFixed(1);
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-row">尚無紀錄</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(r => `
+      <tr data-id="${r.id}">
+        <td><span class="cell-view">${r.date}</span><input class="cell-edit" type="date" value="${r.date}" style="display:none"></td>
+        <td><span class="cell-view">${escHtml(r.project)}</span><input class="cell-edit" type="text" value="${escHtml(r.project)}" style="display:none" placeholder="專案名稱"></td>
+        <td><span class="cell-view">${escHtml(r.content)}</span><input class="cell-edit" type="text" value="${escHtml(r.content)}" style="display:none" placeholder="工作內容"></td>
+        <td><span class="cell-view">${r.hours}</span><input class="cell-edit" type="number" value="${r.hours}" style="display:none" step="0.5" min="0.5" placeholder="時數"></td>
+        <td class="action-cell">
+          <button class="btn-edit" onclick="startEdit('${r.id}')">編輯</button>
+          <button class="btn-save" onclick="saveEdit('${r.id}')" style="display:none">儲存</button>
+          <button class="btn-cancel" onclick="cancelEdit('${r.id}')" style="display:none">取消</button>
+          <button class="btn-delete" onclick="deleteRecord('${r.id}')">刪除</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  function startEdit(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    row.querySelectorAll(".cell-view").forEach(el => el.style.display = "none");
+    row.querySelectorAll(".cell-edit").forEach(el => el.style.display = "");
+    row.querySelector(".btn-edit").style.display = "none";
+    row.querySelector(".btn-save").style.display = "";
+    row.querySelector(".btn-cancel").style.display = "";
+    row.querySelector(".btn-delete").style.display = "none";
+    row.classList.add("editing");
+  }
+
+  function cancelEdit(id) {
+    renderRecords();
+  }
+
+  async function saveEdit(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    const inputs = row.querySelectorAll(".cell-edit");
+    const date = inputs[0].value;
+    const project = inputs[1].value.trim();
+    const content = inputs[2].value.trim();
+    const hours = inputs[3].value;
+    if (!date || !project || !content || !hours) { alert("請填寫所有欄位"); return; }
+    await updateRecord(id, date, project, content, hours);
+  }
+
+  function showApp() {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app-screen").style.display = "";
+    document.getElementById("user-name").textContent = currentUser.nickname;
+    // 設定今天日期預設值
+    document.getElementById("input-date").value = today();
+  }
+
+  function today() {
+    return new Date().toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-");
+  }
+
+  function escHtml(str) {
+    return (str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function exportCSV() {
+    const filterMonth = document.getElementById("filter-month")?.value || "";
+    const filterProject = document.getElementById("filter-project")?.value.trim().toLowerCase() || "";
+    let filtered = records.filter(r => {
+      const monthMatch = filterMonth ? r.date.startsWith(filterMonth) : true;
+      const projectMatch = filterProject ? r.project.toLowerCase().includes(filterProject) : true;
+      return monthMatch && projectMatch;
+    });
+    const BOM = "\uFEFF";
+    const header = "日期,專案名稱,工作內容,時數\n";
+    const rows = filtered.map(r => `${r.date},"${r.project}","${r.content}",${r.hours}`).join("\n");
+    const blob = new Blob([BOM + header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `工時記錄_${currentUser.nickname}_${filterMonth || "全部"}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // 掛載全域函式
+  window.startEdit = startEdit;
+  window.cancelEdit = cancelEdit;
+  window.saveEdit = saveEdit;
+  window.deleteRecord = deleteRecord;
+
+  // DOM ready
+  document.addEventListener("DOMContentLoaded", async () => {
+    // 登入
+    const saved = localStorage.getItem("wt_nickname");
+    if (saved) {
+      document.getElementById("nickname-input").value = saved;
+    }
+
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      const nickname = document.getElementById("nickname-input").value.trim();
+      if (!nickname) { alert("請輸入暱稱"); return; }
+      document.getElementById("login-btn").disabled = true;
+      document.getElementById("login-btn").textContent = "登入中...";
+      await login(nickname);
+    });
+
+    document.getElementById("nickname-input").addEventListener("keydown", e => {
+      if (e.key === "Enter") document.getElementById("login-btn").click();
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      if (unsubscribe) unsubscribe();
+      currentUser = null;
+      records = [];
+      localStorage.removeItem("wt_nickname");
+      document.getElementById("app-screen").style.display = "none";
+      document.getElementById("login-screen").style.display = "";
+      document.getElementById("login-btn").disabled = false;
+      document.getElementById("login-btn").textContent = "進入";
+    });
+
+    document.getElementById("add-btn").addEventListener("click", async () => {
+      const date = document.getElementById("input-date").value;
+      const project = document.getElementById("input-project").value.trim();
+      const content = document.getElementById("input-content").value.trim();
+      const hours = document.getElementById("input-hours").value;
+      if (!date || !project || !content || !hours) { alert("請填寫所有欄位"); return; }
+      document.getElementById("add-btn").disabled = true;
+      await addRecord(date, project, content, hours);
+      document.getElementById("input-project").value = "";
+      document.getElementById("input-content").value = "";
+      document.getElementById("input-hours").value = "";
+      document.getElementById("add-btn").disabled = false;
+      document.getElementById("input-project").focus();
+    });
+
+    document.getElementById("export-btn").addEventListener("click", exportCSV);
+
+    document.getElementById("filter-month").addEventListener("change", renderRecords);
+    document.getElementById("filter-project").addEventListener("input", renderRecords);
+
+    // 設定月份篩選預設為本月
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+    document.getElementById("filter-month").value = ym;
+  });
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --border: #e0dbd4;
+    --text: #1a1814;
+    --text-sub: #7a756e;
+    --accent: #c85a2a;
+    --accent-light: #f5ede8;
+    --green: #2a7a4a;
+    --green-light: #e8f5ee;
+    --red: #c82a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 40px;
+    width: 360px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+
+  .login-logo {
+    width: 48px;
+    height: 48px;
+    background: var(--accent);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 22px;
+    color: #fff;
+  }
+
+  .login-card h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .login-card p {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-bottom: 32px;
+  }
+
+  .login-card input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color .2s;
+    text-align: center;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+  }
+
+  .login-card input:focus { border-color: var(--accent); }
+
+  .login-card button {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: opacity .2s, transform .1s;
+  }
+
+  .login-card button:hover { opacity: .9; }
+  .login-card button:active { transform: scale(.98); }
+  .login-card button:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── APP ── */
+  #app-screen { display: none; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-logo {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #fff;
+  }
+
+  .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: 0.05em; }
+
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .user-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px 4px 8px;
+    font-size: 13px;
+    color: var(--text-sub);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .user-dot {
+    width: 20px; height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #fff; font-weight: 700;
+  }
+
+  .btn-logout {
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--text-sub);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-logout:hover { border-color: var(--accent); color: var(--accent); }
+
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+
+  /* ── ADD FORM ── */
+  .add-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 20px 16px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .add-card h2 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-sub);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .add-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr 2fr 90px auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .add-grid input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  .add-grid input:focus { border-color: var(--accent); background: #fff; }
+
+  .btn-add {
+    padding: 9px 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity .2s;
+  }
+  .btn-add:hover { opacity: .88; }
+  .btn-add:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── TABLE CARD ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .table-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .table-header-left { display: flex; align-items: center; gap: 10px; }
+
+  .total-badge {
+    background: var(--accent-light);
+    border: 1px solid #e8c5b5;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .filter-row { display: flex; align-items: center; gap: 8px; }
+
+  .filter-row input, .filter-row select {
+    padding: 6px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color .2s;
+  }
+  .filter-row input:focus, .filter-row select:focus { border-color: var(--accent); }
+
+  .btn-export {
+    padding: 6px 14px;
+    background: var(--green-light);
+    border: 1px solid #b5d8c4;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-family: inherit;
+    color: var(--green);
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .btn-export:hover { opacity: .8; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+
+  thead {
+    background: var(--surface2);
+  }
+
+  thead th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-sub);
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr.editing { background: #fffdf9; }
+
+  tbody td {
+    padding: 10px 16px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  td:nth-child(4) {
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .empty-row {
+    text-align: center;
+    color: var(--text-sub);
+    padding: 40px !important;
+    font-size: 13px;
+  }
+
+  /* 行內編輯 */
+  .cell-edit {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1.5px solid var(--accent);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+    outline: none;
+  }
+
+  .action-cell { display: flex; gap: 5px; align-items: center; white-space: nowrap; }
+
+  .btn-edit, .btn-save, .btn-cancel, .btn-delete {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .btn-edit { background: var(--surface2); border-color: var(--border); color: var(--text-sub); }
+  .btn-edit:hover { color: var(--accent); border-color: var(--accent); }
+  .btn-save { background: var(--green-light); border-color: #b5d8c4; color: var(--green); }
+  .btn-save:hover { opacity: .8; }
+  .btn-cancel { background: var(--surface2); border-color: var(--border); color: var(--text-sub); }
+  .btn-delete { background: #fde8e8; border-color: #e8b5b5; color: var(--red); }
+  .btn-delete:hover { opacity: .8; }
+
+  @media (max-width: 700px) {
+    .add-grid { grid-template-columns: 1fr 1fr; }
+    .add-grid input:nth-child(3) { grid-column: 1/-1; }
+    .btn-add { grid-column: 1/-1; }
+    .table-header { flex-direction: column; align-items: flex-start; }
+    .topbar-title { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── 登入畫面 ── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">⏱</div>
+    <h1>工時記錄器</h1>
+    <p>輸入你的暱稱開始記錄</p>
+    <input type="text" id="nickname-input" placeholder="輸入暱稱…" maxlength="30" autocomplete="off">
+    <button id="login-btn">進入</button>
+  </div>
+</div>
+
+<!-- ── 主畫面 ── -->
+<div id="app-screen">
+  <nav class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">⏱</div>
+      <span class="topbar-title">工時記錄器</span>
+    </div>
+    <div class="topbar-right">
+      <div class="user-badge">
+        <div class="user-dot" id="user-initial">?</div>
+        <span id="user-name">—</span>
+      </div>
+      <button class="btn-logout" id="logout-btn">切換使用者</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <!-- 新增表單 -->
+    <div class="add-card">
+      <h2>新增紀錄</h2>
+      <div class="add-grid">
+        <input type="date" id="input-date">
+        <input type="text" id="input-project" placeholder="專案名稱" maxlength="50">
+        <input type="text" id="input-content" placeholder="工作內容" maxlength="200">
+        <input type="number" id="input-hours" placeholder="時數" step="0.5" min="0.5" max="24">
+        <button class="btn-add" id="add-btn">＋ 新增</button>
+      </div>
+    </div>
+
+    <!-- 紀錄列表 -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-header-left">
+          <span style="font-size:14px;font-weight:600;">我的紀錄</span>
+          <span class="total-badge">合計 <span id="total-hours">0</span> 小時</span>
+        </div>
+        <div class="filter-row">
+          <input type="month" id="filter-month" title="篩選月份">
+          <input type="text" id="filter-project" placeholder="搜尋專案…" style="width:120px">
+          <button class="btn-export" id="export-btn">↓ 匯出 CSV</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>專案名稱</th>
+              <th>工作內容</th>
+              <th>時數 (h)</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="records-body">
+            <tr><td colspan="5" class="empty-row">載入中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 更新頭像字母
+  const origShowApp = window.showApp;
+  document.addEventListener("DOMContentLoaded", () => {
+    const observer = new MutationObserver(() => {
+      const name = document.getElementById("user-name")?.textContent;
+      if (name && name !== "—") {
+        document.getElementById("user-initial").textContent = name.charAt(0).toUpperCase();
+      }
+    });
+    const el = document.getElementById("user-name");
+    if (el) observer.observe(el, { childList: true, subtree: true, characterData: true });
+  });
+</script>
+
+</body>
+</html>
