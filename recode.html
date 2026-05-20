@@ -6,9 +6,8 @@
 <title>工時記錄器</title>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // ⚠️ 請填入你的 Firebase 設定
   const firebaseConfig = {
     apiKey: "AIzaSyB1VFg1wtVsa6NYInsVue00wSpKkiP4FGo",
     authDomain: "recode-5fb20.firebaseapp.com",
@@ -22,11 +21,16 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  let currentUser = null; // { nickname, userId, ip }
+  let currentUser = null;
   let records = [];
   let unsubscribe = null;
 
-  // 取得 IP
+  // ── 計時器狀態 ──
+  let timerState = "idle"; // idle | running | paused
+  let timerStart = null;
+  let timerAccum = 0;
+  let timerInterval = null;
+
   async function getIP() {
     try {
       const res = await fetch("https://api.ipify.org?format=json");
@@ -35,27 +39,18 @@
     } catch { return "unknown-" + Date.now(); }
   }
 
-  // 產生 userId = nickname（不同ip同暱稱 → 同人）
-  // 同ip改暱稱 → 不同人（userId以nickname為主）
   async function login(nickname) {
     const ip = await getIP();
-    const userId = nickname; // userId = 暱稱（不同ip同暱稱=同人）
-    currentUser = { nickname, userId, ip };
-
-    // 確保 user doc 存在
-    const userRef = doc(db, "users", userId);
+    currentUser = { nickname, userId: nickname, ip };
+    const userRef = doc(db, "users", nickname);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) {
       await setDoc(userRef, { nickname, createdAt: new Date().toISOString(), ips: [ip] });
     } else {
-      // 追加 ip 紀錄（選填，後台可查）
       const data = userSnap.data();
       const ips = data.ips || [];
-      if (!ips.includes(ip)) {
-        await updateDoc(userRef, { ips: [...ips, ip] });
-      }
+      if (!ips.includes(ip)) await updateDoc(userRef, { ips: [...ips, ip] });
     }
-
     localStorage.setItem("wt_nickname", nickname);
     showApp();
     listenRecords();
@@ -66,21 +61,23 @@
     const q = query(collection(db, "records"), where("userId", "==", currentUser.userId));
     unsubscribe = onSnapshot(q, (snap) => {
       records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      records.sort((a, b) => (b.date + b.createdAt) > (a.date + a.createdAt) ? 1 : -1);
+      records.sort((a, b) => (b.date + (b.createdAt||"")) > (a.date + (a.createdAt||"")) ? 1 : -1);
       renderRecords();
     });
   }
 
-  async function addRecord(date, project, content, hours) {
+  async function saveRecord(date, project, content, seconds) {
+    const hours = Math.round(seconds / 36) / 100;
     const id = "r_" + Date.now();
     await setDoc(doc(db, "records", id), {
       userId: currentUser.userId,
       nickname: currentUser.nickname,
       date, project, content,
-      hours: parseFloat(hours),
+      hours, seconds,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
+    return hours;
   }
 
   async function updateRecord(id, date, project, content, hours) {
@@ -91,29 +88,130 @@
     });
   }
 
-  async function deleteRecord(id) {
+  window.deleteRecord = async function(id) {
     if (!confirm("確定要刪除這筆紀錄嗎？")) return;
-    const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
     await deleteDoc(doc(db, "records", id));
+  };
+
+  // ── 計時器 ──
+  function formatSeconds(s) {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
   }
 
+  function timerTick() {
+    const elapsed = timerAccum + Math.floor((Date.now() - timerStart) / 1000);
+    document.getElementById("timer-display").textContent = formatSeconds(elapsed);
+  }
+
+  function startTimer() {
+    if (timerState === "running") return;
+    timerStart = Date.now();
+    timerState = "running";
+    timerInterval = setInterval(timerTick, 1000);
+    updateTimerUI();
+  }
+
+  function pauseTimer() {
+    if (timerState !== "running") return;
+    timerAccum += Math.floor((Date.now() - timerStart) / 1000);
+    clearInterval(timerInterval);
+    timerState = "paused";
+    updateTimerUI();
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    timerState = "idle";
+    timerStart = null;
+    timerAccum = 0;
+    document.getElementById("timer-display").textContent = "00:00:00";
+    updateTimerUI();
+  }
+
+  async function stopAndSave() {
+    if (timerState === "running") {
+      timerAccum += Math.floor((Date.now() - timerStart) / 1000);
+      clearInterval(timerInterval);
+    }
+    if (timerAccum < 1) { alert("尚未開始計時"); return; }
+
+    const project = document.getElementById("timer-project").value.trim();
+    const content = document.getElementById("timer-content").value.trim();
+    const date = document.getElementById("timer-date").value;
+    if (!project || !content || !date) { alert("請填寫日期、專案名稱和工作內容"); return; }
+
+    const totalSec = timerAccum;
+    timerState = "idle";
+
+    const btn = document.getElementById("stop-btn");
+    btn.disabled = true;
+    const hours = await saveRecord(date, project, content, totalSec);
+
+    showSavedToast(hours);
+    resetTimer();
+    document.getElementById("timer-project").value = "";
+    document.getElementById("timer-content").value = "";
+    btn.disabled = false;
+  }
+
+  function showSavedToast(hours) {
+    const t = document.getElementById("toast");
+    t.textContent = `✓ 已記錄 ${hours} 小時`;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  function updateTimerUI() {
+    const startBtn = document.getElementById("start-btn");
+    const pauseBtn = document.getElementById("pause-btn");
+    const stopBtn  = document.getElementById("stop-btn");
+    const box = document.getElementById("timer-box");
+    const status = document.getElementById("timer-status");
+
+    box.classList.remove("running", "paused");
+
+    if (timerState === "idle") {
+      startBtn.style.display = "";
+      startBtn.textContent = "▶ 開始";
+      pauseBtn.style.display = "none";
+      stopBtn.style.display = "none";
+      status.textContent = "待機中";
+    } else if (timerState === "running") {
+      startBtn.style.display = "none";
+      pauseBtn.style.display = "";
+      pauseBtn.textContent = "⏸ 暫停";
+      stopBtn.style.display = "";
+      box.classList.add("running");
+      status.textContent = "計時中…";
+    } else if (timerState === "paused") {
+      startBtn.style.display = "";
+      startBtn.textContent = "▶ 繼續";
+      pauseBtn.style.display = "none";
+      stopBtn.style.display = "";
+      box.classList.add("paused");
+      status.textContent = "已暫停";
+    }
+  }
+
+  // ── 紀錄列表 ──
   function renderRecords() {
     const tbody = document.getElementById("records-body");
-    const total = document.getElementById("total-hours");
+    const totalEl = document.getElementById("total-hours");
     if (!tbody) return;
 
-    // 篩選
     const filterMonth = document.getElementById("filter-month")?.value || "";
     const filterProject = document.getElementById("filter-project")?.value.trim().toLowerCase() || "";
     let filtered = records.filter(r => {
-      const monthMatch = filterMonth ? r.date.startsWith(filterMonth) : true;
-      const projectMatch = filterProject ? r.project.toLowerCase().includes(filterProject) : true;
-      return monthMatch && projectMatch;
+      const mOk = filterMonth ? r.date.startsWith(filterMonth) : true;
+      const pOk = filterProject ? (r.project||"").toLowerCase().includes(filterProject) : true;
+      return mOk && pOk;
     });
 
-    // 計算總時數
-    const totalH = filtered.reduce((sum, r) => sum + (r.hours || 0), 0);
-    total.textContent = totalH % 1 === 0 ? totalH : totalH.toFixed(1);
+    const totalH = filtered.reduce((s, r) => s + (r.hours || 0), 0);
+    totalEl.textContent = Math.round(totalH * 100) / 100;
 
     if (filtered.length === 0) {
       tbody.innerHTML = `<tr><td colspan="5" class="empty-row">尚無紀錄</td></tr>`;
@@ -123,20 +221,24 @@
     tbody.innerHTML = filtered.map(r => `
       <tr data-id="${r.id}">
         <td><span class="cell-view">${r.date}</span><input class="cell-edit" type="date" value="${r.date}" style="display:none"></td>
-        <td><span class="cell-view">${escHtml(r.project)}</span><input class="cell-edit" type="text" value="${escHtml(r.project)}" style="display:none" placeholder="專案名稱"></td>
-        <td><span class="cell-view">${escHtml(r.content)}</span><input class="cell-edit" type="text" value="${escHtml(r.content)}" style="display:none" placeholder="工作內容"></td>
-        <td><span class="cell-view">${r.hours}</span><input class="cell-edit" type="number" value="${r.hours}" style="display:none" step="0.5" min="0.5" placeholder="時數"></td>
+        <td><span class="cell-view">${esc(r.project)}</span><input class="cell-edit" type="text" value="${esc(r.project)}" style="display:none"></td>
+        <td><span class="cell-view">${esc(r.content)}</span><input class="cell-edit" type="text" value="${esc(r.content)}" style="display:none"></td>
+        <td>
+          <span class="cell-view hours-val">${r.hours}</span>
+          <input class="cell-edit" type="number" value="${r.hours}" style="display:none" step="0.01" min="0.01">
+          ${r.seconds ? `<span class="time-raw">${formatSeconds(r.seconds)}</span>` : ""}
+        </td>
         <td class="action-cell">
           <button class="btn-edit" onclick="startEdit('${r.id}')">編輯</button>
           <button class="btn-save" onclick="saveEdit('${r.id}')" style="display:none">儲存</button>
-          <button class="btn-cancel" onclick="cancelEdit('${r.id}')" style="display:none">取消</button>
+          <button class="btn-cancel" onclick="renderRecords()" style="display:none">取消</button>
           <button class="btn-delete" onclick="deleteRecord('${r.id}')">刪除</button>
         </td>
       </tr>
     `).join("");
   }
 
-  function startEdit(id) {
+  window.startEdit = function(id) {
     const row = document.querySelector(`tr[data-id="${id}"]`);
     row.querySelectorAll(".cell-view").forEach(el => el.style.display = "none");
     row.querySelectorAll(".cell-edit").forEach(el => el.style.display = "");
@@ -144,14 +246,9 @@
     row.querySelector(".btn-save").style.display = "";
     row.querySelector(".btn-cancel").style.display = "";
     row.querySelector(".btn-delete").style.display = "none";
-    row.classList.add("editing");
-  }
+  };
 
-  function cancelEdit(id) {
-    renderRecords();
-  }
-
-  async function saveEdit(id) {
+  window.saveEdit = async function(id) {
     const row = document.querySelector(`tr[data-id="${id}"]`);
     const inputs = row.querySelectorAll(".cell-edit");
     const date = inputs[0].value;
@@ -160,63 +257,58 @@
     const hours = inputs[3].value;
     if (!date || !project || !content || !hours) { alert("請填寫所有欄位"); return; }
     await updateRecord(id, date, project, content, hours);
-  }
+  };
+
+  window.renderRecords = renderRecords;
 
   function showApp() {
     document.getElementById("login-screen").style.display = "none";
     document.getElementById("app-screen").style.display = "block";
     document.getElementById("user-name").textContent = currentUser.nickname;
-    // 設定今天日期預設值
-    document.getElementById("input-date").value = today();
+    document.getElementById("user-initial").textContent = currentUser.nickname.charAt(0).toUpperCase();
+    document.getElementById("timer-date").value = todayStr();
+    const now = new Date();
+    document.getElementById("filter-month").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
   }
 
-  function today() {
-    return new Date().toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-");
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
   }
 
-  function escHtml(str) {
-    return (str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  function esc(str) {
+    return (str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
 
   function exportCSV() {
     const filterMonth = document.getElementById("filter-month")?.value || "";
     const filterProject = document.getElementById("filter-project")?.value.trim().toLowerCase() || "";
     let filtered = records.filter(r => {
-      const monthMatch = filterMonth ? r.date.startsWith(filterMonth) : true;
-      const projectMatch = filterProject ? r.project.toLowerCase().includes(filterProject) : true;
-      return monthMatch && projectMatch;
+      const mOk = filterMonth ? r.date.startsWith(filterMonth) : true;
+      const pOk = filterProject ? (r.project||"").toLowerCase().includes(filterProject) : true;
+      return mOk && pOk;
     });
     const BOM = "\uFEFF";
-    const header = "日期,專案名稱,工作內容,時數\n";
-    const rows = filtered.map(r => `${r.date},"${r.project}","${r.content}",${r.hours}`).join("\n");
+    const header = "日期,專案名稱,工作內容,時數,實際時間\n";
+    const rows = filtered.map(r => `${r.date},"${r.project}","${r.content}",${r.hours},${r.seconds ? formatSeconds(r.seconds) : ""}`).join("\n");
     const blob = new Blob([BOM + header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `工時記錄_${currentUser.nickname}_${filterMonth || "全部"}.csv`;
+    a.download = `工時記錄_${currentUser.nickname}_${filterMonth||"全部"}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  // 掛載全域函式
-  window.startEdit = startEdit;
-  window.cancelEdit = cancelEdit;
-  window.saveEdit = saveEdit;
-  window.deleteRecord = deleteRecord;
-
-  // DOM ready
-  document.addEventListener("DOMContentLoaded", async () => {
-    // 登入
+  document.addEventListener("DOMContentLoaded", () => {
     const saved = localStorage.getItem("wt_nickname");
-    if (saved) {
-      document.getElementById("nickname-input").value = saved;
-    }
+    if (saved) document.getElementById("nickname-input").value = saved;
 
     document.getElementById("login-btn").addEventListener("click", async () => {
       const nickname = document.getElementById("nickname-input").value.trim();
       if (!nickname) { alert("請輸入暱稱"); return; }
-      document.getElementById("login-btn").disabled = true;
-      document.getElementById("login-btn").textContent = "登入中...";
+      const btn = document.getElementById("login-btn");
+      btn.disabled = true; btn.textContent = "登入中…";
       await login(nickname);
     });
 
@@ -226,39 +318,21 @@
 
     document.getElementById("logout-btn").addEventListener("click", () => {
       if (unsubscribe) unsubscribe();
-      currentUser = null;
-      records = [];
+      resetTimer();
+      currentUser = null; records = [];
       localStorage.removeItem("wt_nickname");
       document.getElementById("app-screen").style.display = "none";
       document.getElementById("login-screen").style.display = "flex";
-      document.getElementById("login-btn").disabled = false;
-      document.getElementById("login-btn").textContent = "進入";
+      const btn = document.getElementById("login-btn");
+      btn.disabled = false; btn.textContent = "進入";
     });
 
-    document.getElementById("add-btn").addEventListener("click", async () => {
-      const date = document.getElementById("input-date").value;
-      const project = document.getElementById("input-project").value.trim();
-      const content = document.getElementById("input-content").value.trim();
-      const hours = document.getElementById("input-hours").value;
-      if (!date || !project || !content || !hours) { alert("請填寫所有欄位"); return; }
-      document.getElementById("add-btn").disabled = true;
-      await addRecord(date, project, content, hours);
-      document.getElementById("input-project").value = "";
-      document.getElementById("input-content").value = "";
-      document.getElementById("input-hours").value = "";
-      document.getElementById("add-btn").disabled = false;
-      document.getElementById("input-project").focus();
-    });
-
+    document.getElementById("start-btn").addEventListener("click", startTimer);
+    document.getElementById("pause-btn").addEventListener("click", pauseTimer);
+    document.getElementById("stop-btn").addEventListener("click", stopAndSave);
     document.getElementById("export-btn").addEventListener("click", exportCSV);
-
     document.getElementById("filter-month").addEventListener("change", renderRecords);
     document.getElementById("filter-project").addEventListener("input", renderRecords);
-
-    // 設定月份篩選預設為本月
-    const now = new Date();
-    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-    document.getElementById("filter-month").value = ym;
   });
 </script>
 <style>
@@ -276,6 +350,8 @@
     --green: #2a7a4a;
     --green-light: #e8f5ee;
     --red: #c82a2a;
+    --running: #1a6e3a;
+    --running-light: #e4f5ec;
     --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
   }
 
@@ -290,13 +366,11 @@
     line-height: 1.6;
   }
 
-  /* ── LOGIN ── */
   #login-screen {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg);
   }
 
   .login-card {
@@ -310,30 +384,16 @@
   }
 
   .login-logo {
-    width: 48px;
-    height: 48px;
+    width: 52px; height: 52px;
     background: var(--accent);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
     margin: 0 auto 20px;
-    font-size: 22px;
-    color: #fff;
+    font-size: 24px;
   }
 
-  .login-card h1 {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    margin-bottom: 6px;
-  }
-
-  .login-card p {
-    font-size: 13px;
-    color: var(--text-sub);
-    margin-bottom: 32px;
-  }
+  .login-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .login-card p { font-size: 13px; color: var(--text-sub); margin-bottom: 32px; }
 
   .login-card input {
     width: 100%;
@@ -345,13 +405,12 @@
     background: var(--bg);
     color: var(--text);
     outline: none;
-    transition: border-color .2s;
     text-align: center;
     letter-spacing: 0.05em;
     margin-bottom: 14px;
+    transition: border-color .2s;
   }
-
-  .login-card input:focus { border-color: var(--accent); }
+  .login-card input:focus { border-color: var(--accent); background: #fff; }
 
   .login-card button {
     width: 100%;
@@ -364,60 +423,51 @@
     font-family: inherit;
     font-weight: 500;
     cursor: pointer;
-    letter-spacing: 0.05em;
-    transition: opacity .2s, transform .1s;
+    transition: opacity .2s;
   }
-
-  .login-card button:hover { opacity: .9; }
-  .login-card button:active { transform: scale(.98); }
+  .login-card button:hover { opacity: .88; }
   .login-card button:disabled { opacity: .5; cursor: not-allowed; }
 
-  /* ── APP ── */
   #app-screen { display: none; }
 
   .topbar {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     padding: 0 24px;
-    height: 56px;
+    height: 54px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    position: sticky; top: 0; z-index: 100;
   }
 
-  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
   .topbar-logo {
     width: 32px; height: 32px;
     background: var(--accent);
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px; color: #fff;
+    font-size: 16px;
   }
-
-  .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: 0.05em; }
+  .topbar-title { font-size: 15px; font-weight: 700; }
 
   .topbar-right { display: flex; align-items: center; gap: 10px; }
   .user-badge {
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 4px 12px 4px 8px;
+    padding: 4px 12px 4px 6px;
     font-size: 13px;
     color: var(--text-sub);
     display: flex; align-items: center; gap: 6px;
   }
-
   .user-dot {
-    width: 20px; height: 20px;
+    width: 22px; height: 22px;
     background: var(--accent);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-size: 11px; color: #fff; font-weight: 700;
   }
-
   .btn-logout {
     padding: 6px 14px;
     background: transparent;
@@ -431,39 +481,112 @@
   }
   .btn-logout:hover { border-color: var(--accent); color: var(--accent); }
 
-  .main {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 24px 20px 60px;
-  }
+  .main { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
 
-  /* ── ADD FORM ── */
-  .add-card {
+  /* ── TIMER CARD ── */
+  .timer-card {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px 20px 16px;
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
     margin-bottom: 20px;
     box-shadow: var(--shadow);
+    transition: border-color .3s, background .3s;
   }
 
-  .add-card h2 {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-sub);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 14px;
+  .timer-card.running {
+    border-color: #7ec9a0;
+    background: #f7fdf9;
+  }
+  .timer-card.paused {
+    border-color: #e8c87a;
+    background: #fffdf5;
   }
 
-  .add-grid {
-    display: grid;
-    grid-template-columns: 140px 1fr 2fr 90px auto;
-    gap: 8px;
+  .timer-top {
+    display: flex;
     align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
   }
 
-  .add-grid input {
+  .timer-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 46px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    color: var(--text);
+    line-height: 1;
+    transition: color .3s;
+  }
+
+  .timer-card.running .timer-display { color: var(--running); }
+  .timer-card.paused .timer-display { color: #9a6800; }
+
+  .timer-status {
+    font-size: 12px;
+    color: var(--text-sub);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 5px;
+  }
+  .timer-card.running .timer-status { color: var(--running); }
+  .timer-card.paused .timer-status { color: #9a6800; }
+
+  .timer-btns { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+
+  .btn-timer {
+    padding: 11px 22px;
+    border-radius: 10px;
+    border: 1.5px solid;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+
+  #start-btn {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  #start-btn:hover { opacity: .88; }
+
+  #pause-btn {
+    background: #fff8e8;
+    border-color: #e0b84a;
+    color: #7a5000;
+    display: none;
+  }
+  #pause-btn:hover { background: #fff0c0; }
+
+  #stop-btn {
+    background: var(--running-light);
+    border-color: #7ec9a0;
+    color: var(--running);
+    display: none;
+  }
+  #stop-btn:hover { background: #c8ead8; }
+  #stop-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .timer-fields {
+    display: grid;
+    grid-template-columns: 150px 1fr 2fr;
+    gap: 10px;
+  }
+
+  .field-label {
+    font-size: 11px;
+    color: var(--text-sub);
+    letter-spacing: 0.07em;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+
+  .timer-fields input {
     width: 100%;
     padding: 9px 12px;
     border: 1.5px solid var(--border);
@@ -475,26 +598,9 @@
     outline: none;
     transition: border-color .2s;
   }
+  .timer-fields input:focus { border-color: var(--accent); background: #fff; }
 
-  .add-grid input:focus { border-color: var(--accent); background: #fff; }
-
-  .btn-add {
-    padding: 9px 18px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 13.5px;
-    font-family: inherit;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: opacity .2s;
-  }
-  .btn-add:hover { opacity: .88; }
-  .btn-add:disabled { opacity: .4; cursor: not-allowed; }
-
-  /* ── TABLE CARD ── */
+  /* ── TABLE ── */
   .table-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -504,31 +610,30 @@
   }
 
   .table-header {
-    padding: 16px 20px;
+    padding: 14px 20px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
   }
 
   .table-header-left { display: flex; align-items: center; gap: 10px; }
-
+  .section-title { font-size: 14px; font-weight: 600; }
   .total-badge {
     background: var(--accent-light);
     border: 1px solid #e8c5b5;
     border-radius: 20px;
     padding: 3px 12px;
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--accent);
     font-weight: 500;
     font-family: 'DM Mono', monospace;
   }
 
   .filter-row { display: flex; align-items: center; gap: 8px; }
-
-  .filter-row input, .filter-row select {
+  .filter-row input {
     padding: 6px 10px;
     border: 1.5px solid var(--border);
     border-radius: 7px;
@@ -539,8 +644,7 @@
     outline: none;
     transition: border-color .2s;
   }
-  .filter-row input:focus, .filter-row select:focus { border-color: var(--accent); }
-
+  .filter-row input:focus { border-color: var(--accent); }
   .btn-export {
     padding: 6px 14px;
     background: var(--green-light);
@@ -555,18 +659,10 @@
   }
   .btn-export:hover { opacity: .8; }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13.5px;
-  }
-
-  thead {
-    background: var(--surface2);
-  }
-
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead { background: var(--surface2); }
   thead th {
-    padding: 10px 16px;
+    padding: 9px 16px;
     text-align: left;
     font-size: 12px;
     font-weight: 500;
@@ -574,35 +670,30 @@
     letter-spacing: 0.06em;
     border-bottom: 1px solid var(--border);
   }
-
-  tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background .15s;
-  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: var(--surface2); }
-  tbody tr.editing { background: #fffdf9; }
+  tbody td { padding: 9px 16px; vertical-align: middle; }
 
-  tbody td {
-    padding: 10px 16px;
-    color: var(--text);
-    vertical-align: middle;
-  }
-
-  td:nth-child(4) {
+  .hours-val {
     font-family: 'DM Mono', monospace;
     font-weight: 500;
     color: var(--accent);
+  }
+  .time-raw {
+    display: block;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-sub);
   }
 
   .empty-row {
     text-align: center;
     color: var(--text-sub);
-    padding: 40px !important;
+    padding: 48px !important;
     font-size: 13px;
   }
 
-  /* 行內編輯 */
   .cell-edit {
     width: 100%;
     padding: 5px 8px;
@@ -615,7 +706,6 @@
   }
 
   .action-cell { display: flex; gap: 5px; align-items: center; white-space: nowrap; }
-
   .btn-edit, .btn-save, .btn-cancel, .btn-delete {
     padding: 4px 10px;
     border-radius: 6px;
@@ -623,28 +713,42 @@
     font-size: 12px;
     font-family: inherit;
     cursor: pointer;
-    transition: opacity .2s;
   }
   .btn-edit { background: var(--surface2); border-color: var(--border); color: var(--text-sub); }
   .btn-edit:hover { color: var(--accent); border-color: var(--accent); }
   .btn-save { background: var(--green-light); border-color: #b5d8c4; color: var(--green); }
-  .btn-save:hover { opacity: .8; }
   .btn-cancel { background: var(--surface2); border-color: var(--border); color: var(--text-sub); }
   .btn-delete { background: #fde8e8; border-color: #e8b5b5; color: var(--red); }
-  .btn-delete:hover { opacity: .8; }
 
-  @media (max-width: 700px) {
-    .add-grid { grid-template-columns: 1fr 1fr; }
-    .add-grid input:nth-child(3) { grid-column: 1/-1; }
-    .btn-add { grid-column: 1/-1; }
-    .table-header { flex-direction: column; align-items: flex-start; }
-    .topbar-title { display: none; }
+  #toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--running);
+    color: #fff;
+    padding: 10px 28px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all .3s;
+    pointer-events: none;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 680px) {
+    .timer-fields { grid-template-columns: 1fr 1fr; }
+    .timer-fields > div:last-child { grid-column: 1/-1; }
+    .timer-display { font-size: 34px; }
+    .timer-btns { margin-left: 0; }
   }
 </style>
 </head>
 <body>
 
-<!-- ── 登入畫面 ── -->
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">⏱</div>
@@ -655,7 +759,6 @@
   </div>
 </div>
 
-<!-- ── 主畫面 ── -->
 <div id="app-screen">
   <nav class="topbar">
     <div class="topbar-left">
@@ -672,15 +775,32 @@
   </nav>
 
   <div class="main">
-    <!-- 新增表單 -->
-    <div class="add-card">
-      <h2>新增紀錄</h2>
-      <div class="add-grid">
-        <input type="date" id="input-date">
-        <input type="text" id="input-project" placeholder="專案名稱" maxlength="50">
-        <input type="text" id="input-content" placeholder="工作內容" maxlength="200">
-        <input type="number" id="input-hours" placeholder="時數" step="0.5" min="0.5" max="24">
-        <button class="btn-add" id="add-btn">＋ 新增</button>
+    <!-- 計時器 -->
+    <div class="timer-card" id="timer-box">
+      <div class="timer-top">
+        <div>
+          <div class="timer-display" id="timer-display">00:00:00</div>
+          <div class="timer-status" id="timer-status">待機中</div>
+        </div>
+        <div class="timer-btns">
+          <button class="btn-timer" id="start-btn">▶ 開始</button>
+          <button class="btn-timer" id="pause-btn">⏸ 暫停</button>
+          <button class="btn-timer" id="stop-btn">⏹ 結束並記錄</button>
+        </div>
+      </div>
+      <div class="timer-fields">
+        <div>
+          <div class="field-label">日期</div>
+          <input type="date" id="timer-date">
+        </div>
+        <div>
+          <div class="field-label">專案名稱</div>
+          <input type="text" id="timer-project" placeholder="例：HD 首頁改版" maxlength="50">
+        </div>
+        <div>
+          <div class="field-label">工作內容</div>
+          <input type="text" id="timer-content" placeholder="例：切版、修改 Banner" maxlength="200">
+        </div>
       </div>
     </div>
 
@@ -688,12 +808,12 @@
     <div class="table-card">
       <div class="table-header">
         <div class="table-header-left">
-          <span style="font-size:14px;font-weight:600;">我的紀錄</span>
+          <span class="section-title">我的紀錄</span>
           <span class="total-badge">合計 <span id="total-hours">0</span> 小時</span>
         </div>
         <div class="filter-row">
-          <input type="month" id="filter-month" title="篩選月份">
-          <input type="text" id="filter-project" placeholder="搜尋專案…" style="width:120px">
+          <input type="month" id="filter-month">
+          <input type="text" id="filter-project" placeholder="搜尋專案…" style="width:110px">
           <button class="btn-export" id="export-btn">↓ 匯出 CSV</button>
         </div>
       </div>
@@ -717,20 +837,7 @@
   </div>
 </div>
 
-<script>
-  // 更新頭像字母
-  const origShowApp = window.showApp;
-  document.addEventListener("DOMContentLoaded", () => {
-    const observer = new MutationObserver(() => {
-      const name = document.getElementById("user-name")?.textContent;
-      if (name && name !== "—") {
-        document.getElementById("user-initial").textContent = name.charAt(0).toUpperCase();
-      }
-    });
-    const el = document.getElementById("user-name");
-    if (el) observer.observe(el, { childList: true, subtree: true, characterData: true });
-  });
-</script>
+<div id="toast"></div>
 
 </body>
 </html>
