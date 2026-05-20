@@ -67,17 +67,34 @@
   }
 
   async function saveRecord(date, project, content, seconds) {
-    const hours = Math.round(seconds / 36) / 100;
-    const id = "r_" + Date.now();
-    await setDoc(doc(db, "records", id), {
-      userId: currentUser.userId,
-      nickname: currentUser.nickname,
-      date, project, content,
-      hours, seconds,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-    return hours;
+    // 同日期同專案 → 自動合併
+    const existing = records.find(r => r.date === date && r.project === project);
+    if (existing) {
+      const newSeconds = (existing.seconds || 0) + seconds;
+      const newHours = Math.round(newSeconds / 36) / 100;
+      const contents = existing.content.split("、").map(s => s.trim());
+      if (content && !contents.includes(content)) contents.push(content);
+      const newContent = contents.join("、");
+      await updateDoc(doc(db, "records", existing.id), {
+        hours: newHours,
+        seconds: newSeconds,
+        content: newContent,
+        updatedAt: new Date().toISOString()
+      });
+      return newHours;
+    } else {
+      const hours = Math.round(seconds / 36) / 100;
+      const id = "r_" + Date.now();
+      await setDoc(doc(db, "records", id), {
+        userId: currentUser.userId,
+        nickname: currentUser.nickname,
+        date, project, content,
+        hours, seconds,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      return hours;
+    }
   }
 
   async function updateRecord(id, date, project, content, hours) {
@@ -166,33 +183,21 @@
 
   function updateTimerUI() {
     const startBtn = document.getElementById("start-btn");
-    const pauseBtn = document.getElementById("pause-btn");
     const stopBtn  = document.getElementById("stop-btn");
     const box = document.getElementById("timer-box");
     const status = document.getElementById("timer-status");
 
-    box.classList.remove("running", "paused");
+    box.classList.remove("running");
 
     if (timerState === "idle") {
       startBtn.style.display = "";
-      startBtn.textContent = "▶ 開始";
-      pauseBtn.style.display = "none";
       stopBtn.style.display = "none";
       status.textContent = "待機中";
     } else if (timerState === "running") {
       startBtn.style.display = "none";
-      pauseBtn.style.display = "";
-      pauseBtn.textContent = "⏸ 暫停";
       stopBtn.style.display = "";
       box.classList.add("running");
       status.textContent = "計時中…";
-    } else if (timerState === "paused") {
-      startBtn.style.display = "";
-      startBtn.textContent = "▶ 繼續";
-      pauseBtn.style.display = "none";
-      stopBtn.style.display = "";
-      box.classList.add("paused");
-      status.textContent = "已暫停";
     }
   }
 
@@ -328,7 +333,7 @@
     });
 
     document.getElementById("start-btn").addEventListener("click", startTimer);
-    document.getElementById("pause-btn").addEventListener("click", pauseTimer);
+
     document.getElementById("stop-btn").addEventListener("click", stopAndSave);
     document.getElementById("export-btn").addEventListener("click", exportCSV);
     document.getElementById("filter-month").addEventListener("change", renderRecords);
@@ -784,7 +789,6 @@
         </div>
         <div class="timer-btns">
           <button class="btn-timer" id="start-btn">▶ 開始</button>
-          <button class="btn-timer" id="pause-btn">⏸ 暫停</button>
           <button class="btn-timer" id="stop-btn">⏹ 結束並記錄</button>
         </div>
       </div>
