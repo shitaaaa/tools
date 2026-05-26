@@ -265,10 +265,139 @@
     padding: 40px; font-size: 14px;
   }
 
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-</style>
+  /* ── Tabs ── */
+  .tabs {
+    display: flex; gap: 0; margin-bottom: 24px;
+    border-bottom: 2px solid var(--border);
+  }
+  .tab-btn {
+    padding: 10px 22px; font-size: 14px; font-weight: 600;
+    border: none; background: none; cursor: pointer;
+    color: var(--text-muted); border-bottom: 2px solid transparent;
+    margin-bottom: -2px; transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Custom spec checker ── */
+  .custom-layout {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 20px; align-items: start;
+  }
+  @media (max-width: 680px) { .custom-layout { grid-template-columns: 1fr; } }
+
+  .spec-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .spec-panel h3 {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    margin-bottom: 10px; display: flex; align-items: center; gap: 7px;
+  }
+  .spec-textarea {
+    width: 100%; min-height: 180px;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 13px;
+    font-family: -apple-system, 'PingFang TC', 'Microsoft JhengHei', monospace;
+    resize: vertical; color: var(--text); background: var(--bg);
+    line-height: 1.6; outline: none;
+    transition: border-color 0.15s;
+  }
+  .spec-textarea:focus { border-color: var(--orange); }
+  .spec-textarea::placeholder { color: var(--text-muted); }
+
+  .spec-parse-btn {
+    margin-top: 10px; width: 100%;
+    background: var(--orange); color: white;
+    border: none; border-radius: 8px;
+    padding: 9px 0; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .spec-parse-btn:hover { background: var(--teal); }
+
+  .parsed-rules {
+    margin-top: 14px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .rule-chip {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px;
+    font-size: 12px; color: var(--text-dim);
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .rule-chip-name { font-weight: 600; color: var(--text); flex: 1; min-width: 0; }
+  .rule-chip-spec { color: var(--text-muted); font-size: 11px; text-align: right; }
+  .rule-chip-del {
+    color: var(--text-muted); cursor: pointer; font-size: 14px;
+    flex-shrink: 0; padding: 0 2px;
+  }
+  .rule-chip-del:hover { color: var(--red); }
+  .rule-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.7; }
+
+  /* Custom drop zone */
+  #customDropZone {
+    border: 2px dashed var(--border); border-radius: 12px;
+    padding: 40px 20px; text-align: center; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--surface); position: relative;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  #customDropZone:hover, #customDropZone.drag-over {
+    border-color: var(--teal); background: #F0FDFE;
+  }
+  #customDropZone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0;
+    cursor: pointer; width: 100%; height: 100%;
+  }
+  #customDropZone.has-rules { border-color: var(--teal-dk); }
+
+  /* Custom results */
+  #customResults { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .custom-file-row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px;
+    display: flex; align-items: flex-start; gap: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .custom-file-row.row-pass { border-left: 4px solid var(--green); }
+  .custom-file-row.row-fail { border-left: 4px solid var(--red); }
+  .custom-file-row.row-nomatch { border-left: 4px solid var(--text-muted); }
+  .custom-file-info { flex: 1; min-width: 0; }
+  .custom-file-name {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    word-break: break-all; margin-bottom: 3px;
+  }
+  .custom-file-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .custom-rule-match {
+    font-size: 12px; font-weight: 500; margin-bottom: 4px; color: var(--teal-dk);
+  }
+  .custom-badge {
+    flex-shrink: 0; font-size: 12px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .cb-pass { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
+  .cb-fail { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-bd); }
+  .cb-nomatch { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+
+  .custom-summary-bar {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 18px;
+    display: flex; gap: 20px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .custom-clear-btn {
+    margin-left: auto; background: var(--surface2);
+    border: 1px solid var(--border); color: var(--text);
+    padding: 6px 14px; border-radius: 7px; cursor: pointer;
+    font-size: 12px; font-weight: 500;
+  }
+  .custom-clear-btn:hover { background: var(--border); }
+
 </head>
 <body>
 <div class="app">
@@ -281,7 +410,12 @@
     </div>
   </div>
 
-  <div id="dropZone">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('tab-listing')">📋 新品上架規範</button>
+    <button class="tab-btn" onclick="switchTab('tab-custom')">🔍 自訂規格檢查</button>
+  </div>
+
+  <div id="tab-listing" class="tab-panel active">
     <input type="file" id="fileInput" webkitdirectory multiple accept="image/*,.psd,.psb">
     <span class="drop-icon">📁</span>
     <div class="drop-title">拖曳資料夾到此處，或點擊選擇</div>
@@ -318,9 +452,49 @@
 
   <div id="results"></div>
 
-</div>
+</div><!-- /tab-listing -->
 
-<script>
+<!-- ── Tab 2: 自訂規格檢查 ── -->
+<div id="tab-custom" class="tab-panel">
+  <div class="custom-layout">
+
+    <!-- 左：貼上規格 -->
+    <div class="spec-panel">
+      <h3>📝 貼上規格文字</h3>
+      <textarea id="specInput" class="spec-textarea"
+        placeholder="支援純文字或複製自 Excel 的表格文字，例如：
+
+首圖 800×800 50~400KB
+橫幅 1920×600 100~500KB
+說明圖 1000×1200 200KB以內
+
+或 Tab 分隔的表格：
+類型	尺寸	KB數
+首圖	800×800	50~400
+內文	1000×1200	200以內"></textarea>
+      <button class="spec-parse-btn" onclick="parseSpecInput()">解析規格 →</button>
+      <div id="parsedRules" class="parsed-rules"></div>
+      <div class="rule-hint" id="ruleHint" style="display:none">
+        解析完成後，拖曳圖片到右側進行檢查。<br>
+        檔名若包含規格名稱關鍵字會自動配對，否則逐一比對所有規格。
+      </div>
+    </div>
+
+    <!-- 右：拖曳上傳 -->
+    <div>
+      <div id="customDropZone">
+        <input type="file" id="customFileInput" multiple accept="image/*">
+        <span class="drop-icon">🖼</span>
+        <div class="drop-title">拖曳圖片到此處，或點擊選擇</div>
+        <div class="drop-sub">可一次拖入多張，支援 JPG / PNG</div>
+      </div>
+      <div id="customResults"></div>
+    </div>
+
+  </div>
+</div><!-- /tab-custom -->
+
+</div><!-- /app -->
 // ─── Skip patterns ────────────────────────────────────────────────
 const SKIP_NAMES = /^(\.DS_Store|Thumbs\.db|desktop\.ini|\._.*)$/i;
 const SKIP_EXTS  = /\.(psd|psb|ai|eps|indd|xd|sketch|fig|tif|tiff|bmp|webp|svg|pdf|xlsx?|docx?|zip|rar|7z)$/i;
@@ -932,7 +1106,254 @@ function readDirectoryEntry(dirEntry, pathParts) {
     };
     readBatch();
   });
+// ─── Tab switching ────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const idx = id === 'tab-listing' ? 0 : 1;
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
 }
-</script>
-</body>
-</html>
+
+// ─── Custom Spec Checker ──────────────────────────────────────────
+let customRules = []; // [{ name, w, h, wMax, hMax, minKB, maxKB, raw }]
+
+function parseSpecInput() {
+  const text = document.getElementById('specInput').value.trim();
+  if (!text) return;
+
+  const rules = [];
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+  for (const line of lines) {
+    // Split by tab (Excel paste) or multiple spaces or common delimiters
+    const cols = line.split(/\t|  +|｜|\|/).map(c => c.trim()).filter(Boolean);
+    const fullLine = cols.join(' ');
+
+    // Extract dimensions: WxH or W×H or W*H, with optional 以內/以上/~
+    // Patterns: 800×800, 1000x1200, 寬1000高1200, 1000px×1200px
+    const dimMatch = fullLine.match(/(\d+)\s*[×xX\*]\s*(\d+)/);
+    if (!dimMatch) continue;
+
+    const w = parseInt(dimMatch[1]);
+    const h = parseInt(dimMatch[2]);
+
+    // Extract KB: 50~400KB, 200KB以內, 最大500KB, 50-400KB, ≤500KB, <500KB
+    let minKB = null, maxKB = null;
+
+    const rangeKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[~\-–]\s*(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
+    const maxOnlyKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以內|以下|內|max|MAX|↓|≤|<=|<)/);
+    const minOnlyKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以上|above|↑|≥|>=|>)/);
+    const plainKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]/);
+    const mbMax = fullLine.match(/(\d+(?:\.\d+)?)\s*[Mm][Bb]\s*(?:以內|以下|內|max|MAX|↓|≤|<=|<)?/);
+
+    if (rangeKB) {
+      minKB = parseFloat(rangeKB[1]);
+      maxKB = parseFloat(rangeKB[2]);
+    } else if (maxOnlyKB) {
+      maxKB = parseFloat(maxOnlyKB[1]);
+    } else if (minOnlyKB) {
+      minKB = parseFloat(minOnlyKB[1]);
+    } else if (mbMax) {
+      maxKB = parseFloat(mbMax[1]) * 1024;
+    } else if (plainKB) {
+      maxKB = parseFloat(plainKB[1]);
+    }
+
+    // Name: first column if multiple, otherwise try to extract Chinese label
+    let name = '';
+    if (cols.length >= 2) {
+      // First col as name (if it doesn't look like a number/dimension)
+      const firstCol = cols[0];
+      if (!/^\d/.test(firstCol) && !/[×xX]/.test(firstCol)) {
+        name = firstCol;
+      }
+    }
+    if (!name) {
+      // Try to extract Chinese characters as name
+      const cnMatch = fullLine.match(/[\u4e00-\u9fff\u3400-\u4dbf]+(?:[\s\u4e00-\u9fff\u3400-\u4dbf]*[\u4e00-\u9fff\u3400-\u4dbf]+)?/);
+      name = cnMatch ? cnMatch[0].trim() : `規格${rules.length + 1}`;
+    }
+
+    rules.push({ name, w, h, minKB, maxKB, raw: line });
+  }
+
+  customRules = rules;
+  renderParsedRules();
+  rerunCustomCheck();
+}
+
+function renderParsedRules() {
+  const container = document.getElementById('parsedRules');
+  const hint = document.getElementById('ruleHint');
+  if (customRules.length === 0) {
+    container.innerHTML = '';
+    hint.style.display = 'none';
+    return;
+  }
+  hint.style.display = 'block';
+  container.innerHTML = customRules.map((r, i) => {
+    const kbText = r.minKB && r.maxKB ? `${r.minKB}～${r.maxKB} KB`
+      : r.maxKB ? `≤ ${r.maxKB < 1024 ? r.maxKB + ' KB' : (r.maxKB/1024).toFixed(1) + ' MB'}`
+      : r.minKB ? `≥ ${r.minKB} KB` : '不限 KB';
+    return `<div class="rule-chip">
+      <span class="rule-chip-name">${r.name}</span>
+      <span class="rule-chip-spec">${r.w}×${r.h}px　${kbText}</span>
+      <span class="rule-chip-del" onclick="deleteRule(${i})" title="刪除">✕</span>
+    </div>`;
+  }).join('');
+  document.getElementById('customDropZone').classList.toggle('has-rules', customRules.length > 0);
+}
+
+function deleteRule(i) {
+  customRules.splice(i, 1);
+  renderParsedRules();
+  rerunCustomCheck();
+}
+
+// ─── Custom file check ────────────────────────────────────────────
+let customFileCache = []; // { file, w, h, kb }
+
+async function runCustomCheck(files) {
+  const container = document.getElementById('customResults');
+  if (customRules.length === 0) {
+    container.innerHTML = `<div class="rule-hint" style="margin-top:12px;display:block">請先在左側貼上規格並解析。</div>`;
+    return;
+  }
+  container.innerHTML = `<div class="rule-hint" style="margin-top:12px;display:block">檢查中…</div>`;
+
+  const entries = [];
+  for (const file of files) {
+    const dims = await getImageDimensions(file);
+    const kb = bytesToKB(file.size);
+    entries.push({ file, w: dims.w, h: dims.h, kb });
+  }
+  customFileCache = entries;
+  renderCustomResults(entries);
+}
+
+function rerunCustomCheck() {
+  if (customFileCache.length > 0) renderCustomResults(customFileCache);
+}
+
+function matchRule(entry) {
+  // Try to find a matching rule by filename keyword first
+  const lname = entry.file.name.toLowerCase();
+  let matched = customRules.find(r => lname.includes(r.name.toLowerCase()) && r.name.length >= 2);
+  // If no keyword match, find any rule where dimensions match
+  if (!matched) matched = customRules.find(r => r.w === entry.w && r.h === entry.h);
+  // If still no match, apply all rules and pick best match (smallest combined dim error)
+  if (!matched && customRules.length === 1) matched = customRules[0];
+  return matched || null;
+}
+
+function checkAgainstRule(entry, rule) {
+  const errors = [];
+  if (entry.w !== rule.w || entry.h !== rule.h) {
+    errors.push(`尺寸 ${entry.w}×${entry.h}px，應為 ${rule.w}×${rule.h}px`);
+  }
+  if (rule.minKB !== null && entry.kb < rule.minKB) {
+    errors.push(`檔案過小：${entry.kb.toFixed(1)} KB（下限 ${rule.minKB} KB）`);
+  }
+  if (rule.maxKB !== null && entry.kb > rule.maxKB) {
+    errors.push(`檔案過大：${entry.kb.toFixed(1)} KB（上限 ${rule.maxKB < 1024 ? rule.maxKB + ' KB' : (rule.maxKB/1024).toFixed(1) + ' MB'}）`);
+  }
+  return errors;
+}
+
+function renderCustomResults(entries) {
+  const container = document.getElementById('customResults');
+  if (entries.length === 0) { container.innerHTML = ''; return; }
+  if (customRules.length === 0) {
+    container.innerHTML = `<div class="rule-hint" style="margin-top:12px;display:block">請先在左側貼上規格並解析。</div>`;
+    return;
+  }
+
+  let passCount = 0, failCount = 0, nomatchCount = 0;
+  const rows = entries.map(entry => {
+    const rule = matchRule(entry);
+    if (!rule) {
+      nomatchCount++;
+      return `<div class="custom-file-row row-nomatch">
+        <div class="custom-file-info">
+          <div class="custom-file-name">${entry.file.name}</div>
+          <div class="custom-file-meta">${entry.w}×${entry.h}px　${entry.kb.toFixed(1)} KB</div>
+          <div style="font-size:12px;color:var(--text-muted)">— 無對應規格（尺寸不符任何規則）</div>
+        </div>
+        <span class="custom-badge cb-nomatch">無對應</span>
+      </div>`;
+    }
+
+    const errors = checkAgainstRule(entry, rule);
+    if (errors.length === 0) passCount++;
+    else failCount++;
+
+    const kbText = rule.minKB && rule.maxKB ? `${rule.minKB}～${rule.maxKB} KB`
+      : rule.maxKB ? `≤ ${rule.maxKB < 1024 ? rule.maxKB + ' KB' : (rule.maxKB/1024).toFixed(1) + ' MB'}`
+      : rule.minKB ? `≥ ${rule.minKB} KB` : '';
+    const ruleSpec = `${rule.w}×${rule.h}px${kbText ? '　' + kbText : ''}`;
+
+    const errHtml = errors.map(e => `<div class="error-item">${e}</div>`).join('');
+
+    return `<div class="custom-file-row ${errors.length === 0 ? 'row-pass' : 'row-fail'}">
+      <div class="custom-file-info">
+        <div class="custom-file-name">${entry.file.name}</div>
+        <div class="custom-file-meta">${entry.w}×${entry.h}px　${entry.kb.toFixed(1)} KB</div>
+        <div class="custom-rule-match">對應規格：${rule.name}（${ruleSpec}）</div>
+        ${errHtml ? `<div class="cat-errors" style="margin-top:4px">${errHtml}</div>` : ''}
+      </div>
+      <span class="custom-badge ${errors.length === 0 ? 'cb-pass' : 'cb-fail'}">${errors.length === 0 ? '通過' : '有問題'}</span>
+    </div>`;
+  });
+
+  const total = entries.length;
+  container.innerHTML = `
+    <div class="custom-summary-bar">
+      <span class="stat"><span class="stat-num blue" style="font-size:18px">${total}</span>&nbsp;張</span>
+      <span class="stat"><span class="stat-num green" style="font-size:18px">${passCount}</span>&nbsp;通過</span>
+      <span class="stat"><span class="stat-num red" style="font-size:18px">${failCount}</span>&nbsp;有問題</span>
+      ${nomatchCount > 0 ? `<span class="stat"><span class="stat-num" style="font-size:18px;color:var(--text-muted)">${nomatchCount}</span>&nbsp;無對應</span>` : ''}
+      <button class="custom-clear-btn" onclick="clearCustom()">清除</button>
+    </div>
+    ${rows.join('')}
+  `;
+}
+
+function clearCustom() {
+  customFileCache = [];
+  document.getElementById('customResults').innerHTML = '';
+}
+
+// ─── Custom drop zone events ──────────────────────────────────────
+const customDZ = document.getElementById('customDropZone');
+const customFI = document.getElementById('customFileInput');
+
+customFI.addEventListener('change', () => {
+  if (customFI.files.length > 0) runCustomCheck(Array.from(customFI.files));
+});
+customDZ.addEventListener('dragover', e => { e.preventDefault(); customDZ.classList.add('drag-over'); });
+customDZ.addEventListener('dragleave', () => customDZ.classList.remove('drag-over'));
+customDZ.addEventListener('drop', async e => {
+  e.preventDefault();
+  customDZ.classList.remove('drag-over');
+  const files = [];
+  const IMAGE_RE = /\.(jpe?g|png|gif|webp|bmp)$/i;
+  const items = e.dataTransfer.items;
+  if (items) {
+    const promises = [];
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+      if (entry && entry.isDirectory) {
+        promises.push(readDirectoryEntry(entry, [entry.name]).then(fs => files.push(...fs.filter(f => IMAGE_RE.test(f.name)))));
+      } else if (item.kind === 'file') {
+        const f = item.getAsFile();
+        if (f && IMAGE_RE.test(f.name)) files.push(f);
+      }
+    }
+    await Promise.all(promises);
+  } else {
+    Array.from(e.dataTransfer.files).filter(f => IMAGE_RE.test(f.name)).forEach(f => files.push(f));
+  }
+  if (files.length > 0) runCustomCheck(files);
+});
+
