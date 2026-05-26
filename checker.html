@@ -279,6 +279,7 @@
   }
   .tab-btn:hover { color: var(--text); }
   .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+  #tab-custom-btn.active, .tab-btn.tab-blue.active { color: #2563EB; border-bottom-color: #2563EB; }
 
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
@@ -419,7 +420,7 @@
 
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('tab-listing')">📋 新品上架規範</button>
-    <button class="tab-btn" onclick="switchTab('tab-custom')">🔍 自訂規格檢查</button>
+    <button id="tab-custom-btn" class="tab-btn tab-blue" onclick="switchTab('tab-custom')">🔍 自訂規格檢查</button>
   </div>
 
   <div id="tab-listing" class="tab-panel active">
@@ -1156,7 +1157,7 @@ function parseSpecInput() {
     const rangeKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[~\-–]\s*(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
     const maxOnlyKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以內|以下|內|max|MAX|↓|≤|<=|<)/);
     const minOnlyKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以上|above|↑|≥|>=|>)/);
-    const plainKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]/);
+    const plainKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
     const mbMax = fullLine.match(/(\d+(?:\.\d+)?)\s*[Mm][Bb]\s*(?:以內|以下|內|max|MAX|↓|≤|<=|<)?/);
 
     if (rangeKB) {
