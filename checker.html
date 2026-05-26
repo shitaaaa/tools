@@ -291,90 +291,92 @@
   @media (max-width: 680px) { .custom-layout { grid-template-columns: 1fr; } }
 
   .spec-panel {
-    background: var(--surface); border: 1px solid var(--border);
+    background: #fff; border: 1px solid #DBEAFE;
     border-radius: 12px; padding: 18px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 4px rgba(59,130,246,0.08);
   }
   .spec-panel h3 {
-    font-size: 13px; font-weight: 700; color: var(--text);
+    font-size: 13px; font-weight: 700; color: #1E40AF;
     margin-bottom: 10px; display: flex; align-items: center; gap: 7px;
   }
   .spec-textarea {
     width: 100%; min-height: 180px;
-    border: 1px solid var(--border); border-radius: 8px;
+    border: 1px solid #BFDBFE; border-radius: 8px;
     padding: 10px 12px; font-size: 13px;
     font-family: -apple-system, 'PingFang TC', 'Microsoft JhengHei', monospace;
-    resize: vertical; color: var(--text); background: var(--bg);
+    resize: vertical; color: var(--text); background: #F8FAFF;
     line-height: 1.6; outline: none;
     transition: border-color 0.15s;
   }
-  .spec-textarea:focus { border-color: var(--orange); }
-  .spec-textarea::placeholder { color: var(--text-muted); }
+  .spec-textarea:focus { border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+  .spec-textarea::placeholder { color: #93C5FD; }
 
   .spec-parse-btn {
     margin-top: 10px; width: 100%;
-    background: var(--orange); color: white;
+    background: #2563EB; color: white;
     border: none; border-radius: 8px;
     padding: 9px 0; font-size: 13px; font-weight: 600;
     cursor: pointer; transition: background 0.15s;
   }
-  .spec-parse-btn:hover { background: var(--teal); }
+  .spec-parse-btn:hover { background: #1D4ED8; }
 
   .parsed-rules {
     margin-top: 14px; display: flex; flex-direction: column; gap: 6px;
   }
   .rule-chip {
-    background: var(--surface2); border: 1px solid var(--border);
+    background: #EFF6FF; border: 1px solid #BFDBFE;
     border-radius: 8px; padding: 8px 12px;
-    font-size: 12px; color: var(--text-dim);
+    font-size: 12px; color: #1E40AF;
     display: flex; justify-content: space-between; align-items: center; gap: 8px;
   }
-  .rule-chip-name { font-weight: 600; color: var(--text); flex: 1; min-width: 0; }
-  .rule-chip-spec { color: var(--text-muted); font-size: 11px; text-align: right; }
+  .rule-chip-name { font-weight: 600; color: #1D4ED8; flex: 1; min-width: 0; }
+  .rule-chip-spec { color: #60A5FA; font-size: 11px; text-align: right; }
   .rule-chip-del {
-    color: var(--text-muted); cursor: pointer; font-size: 14px;
+    color: #93C5FD; cursor: pointer; font-size: 14px;
     flex-shrink: 0; padding: 0 2px;
   }
   .rule-chip-del:hover { color: var(--red); }
-  .rule-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.7; }
+  .rule-hint { font-size: 12px; color: #60A5FA; margin-top: 8px; line-height: 1.7; }
 
   /* Custom drop zone */
   #customDropZone {
-    border: 2px dashed var(--border); border-radius: 12px;
+    border: 2px dashed #BFDBFE; border-radius: 12px;
     padding: 40px 20px; text-align: center; cursor: pointer;
     transition: border-color 0.2s, background 0.2s;
-    background: var(--surface); position: relative;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    background: #fff; position: relative;
+    box-shadow: 0 1px 4px rgba(59,130,246,0.08);
   }
   #customDropZone:hover, #customDropZone.drag-over {
-    border-color: var(--teal); background: #F0FDFE;
+    border-color: #3B82F6; background: #EFF6FF;
   }
   #customDropZone input[type="file"] {
     position: absolute; inset: 0; opacity: 0;
     cursor: pointer; width: 100%; height: 100%;
   }
-  #customDropZone.has-rules { border-color: var(--teal-dk); }
+  #customDropZone.has-rules { border-color: #2563EB; }
+  #customDropZone .drop-title { color: #1E40AF; }
+  #customDropZone .drop-sub { color: #93C5FD; }
 
   /* Custom results */
   #customResults { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
   .custom-file-row {
-    background: var(--surface); border: 1px solid var(--border);
+    background: #fff; border: 1px solid #DBEAFE;
     border-radius: 10px; padding: 12px 16px;
     display: flex; align-items: flex-start; gap: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: 0 1px 3px rgba(59,130,246,0.06);
   }
   .custom-file-row.row-pass { border-left: 4px solid var(--green); }
   .custom-file-row.row-fail { border-left: 4px solid var(--red); }
-  .custom-file-row.row-nomatch { border-left: 4px solid var(--text-muted); }
+  .custom-file-row.row-nomatch { border-left: 4px solid #BFDBFE; }
   .custom-file-info { flex: 1; min-width: 0; }
   .custom-file-name {
-    font-size: 13px; font-weight: 600; color: var(--text);
+    font-size: 13px; font-weight: 600; color: #1E40AF;
     font-family: 'SF Mono', 'Fira Code', monospace;
     word-break: break-all; margin-bottom: 3px;
   }
-  .custom-file-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .custom-file-meta { font-size: 12px; color: #60A5FA; margin-bottom: 6px; }
   .custom-rule-match {
-    font-size: 12px; font-weight: 500; margin-bottom: 4px; color: var(--teal-dk);
+    font-size: 12px; font-weight: 500; margin-bottom: 4px; color: #2563EB;
   }
   .custom-badge {
     flex-shrink: 0; font-size: 12px; font-weight: 600;
@@ -382,22 +384,27 @@
   }
   .cb-pass { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
   .cb-fail { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-bd); }
-  .cb-nomatch { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  .cb-nomatch { background: #EFF6FF; color: #93C5FD; border: 1px solid #BFDBFE; }
 
   .custom-summary-bar {
-    background: var(--surface); border: 1px solid var(--border);
+    background: #EFF6FF; border: 1px solid #BFDBFE;
     border-radius: 10px; padding: 14px 18px;
     display: flex; gap: 20px; flex-wrap: wrap; align-items: center;
-    margin-bottom: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    margin-bottom: 4px;
   }
+  .custom-summary-bar .stat-num { color: #2563EB; }
   .custom-clear-btn {
-    margin-left: auto; background: var(--surface2);
-    border: 1px solid var(--border); color: var(--text);
+    margin-left: auto; background: #fff;
+    border: 1px solid #BFDBFE; color: #2563EB;
     padding: 6px 14px; border-radius: 7px; cursor: pointer;
     font-size: 12px; font-weight: 500;
   }
-  .custom-clear-btn:hover { background: var(--border); }
+  .custom-clear-btn:hover { background: #DBEAFE; }
 
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
 </head>
 <body>
 <div class="app">
@@ -416,43 +423,44 @@
   </div>
 
   <div id="tab-listing" class="tab-panel active">
-    <input type="file" id="fileInput" webkitdirectory multiple accept="image/*,.psd,.psb">
-    <span class="drop-icon">📁</span>
-    <div class="drop-title">拖曳資料夾到此處，或點擊選擇</div>
-    <div class="drop-sub">支援一次拖入多個品項資料夾，或整個品項集合資料夾</div>
-    <div class="drop-hint">
-      <span>✅ 主圖</span>
-      <span>✅ 情境圖</span>
-      <span>✅ 去背PNG/JPG</span>
-      <span>✅ 內文圖</span>
-      <span>⚙️ 正方形內文圖</span>
-      <span>⚙️ 其他</span>
-      <span>📂 支援多品項同時拖入</span>
-    </div>
-  </div>
 
-  <div id="progressArea">
-    <div class="progress-label">
-      <span id="progressText">分析中…</span>
-      <span id="progressPct">0%</span>
+    <div id="dropZone">
+      <input type="file" id="fileInput" webkitdirectory multiple accept="image/*,.psd,.psb">
+      <span class="drop-icon">📁</span>
+      <div class="drop-title">拖曳資料夾到此處，或點擊選擇</div>
+      <div class="drop-sub">支援一次拖入多個品項資料夾，或整個品項集合資料夾</div>
+      <div class="drop-hint">
+        <span>✅ 主圖</span>
+        <span>✅ 情境圖</span>
+        <span>✅ 去背PNG/JPG</span>
+        <span>✅ 內文圖</span>
+        <span>⚙️ 正方形內文圖</span>
+        <span>📂 支援多品項同時拖入</span>
+      </div>
     </div>
-    <div class="progress-bar-wrap">
-      <div class="progress-bar" id="progressBar"></div>
+
+    <div id="progressArea">
+      <div class="progress-label">
+        <span id="progressText">分析中…</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
     </div>
-  </div>
 
-  <div id="summary">
-    <div class="summary-stats">
-      <div class="stat"><span class="stat-num blue" id="totalCount">0</span><span>個品項</span></div>
-      <div class="stat"><span class="stat-num green" id="passCount">0</span><span>全部通過</span></div>
-      <div class="stat"><span class="stat-num red" id="failCount">0</span><span>有問題</span></div>
+    <div id="summary">
+      <div class="summary-stats">
+        <div class="stat"><span class="stat-num blue" id="totalCount">0</span><span>個品項</span></div>
+        <div class="stat"><span class="stat-num green" id="passCount">0</span><span>全部通過</span></div>
+        <div class="stat"><span class="stat-num red" id="failCount">0</span><span>有問題</span></div>
+      </div>
+      <button class="btn-reset" onclick="resetApp()">↩ 重新上傳</button>
     </div>
-    <button class="btn-reset" onclick="resetApp()">↩ 重新上傳</button>
-  </div>
 
-  <div id="results"></div>
+    <div id="results"></div>
 
-</div><!-- /tab-listing -->
+  </div><!-- /tab-listing -->
 
 <!-- ── Tab 2: 自訂規格檢查 ── -->
 <div id="tab-custom" class="tab-panel">
@@ -495,6 +503,8 @@
 </div><!-- /tab-custom -->
 
 </div><!-- /app -->
+
+<script>
 // ─── Skip patterns ────────────────────────────────────────────────
 const SKIP_NAMES = /^(\.DS_Store|Thumbs\.db|desktop\.ini|\._.*)$/i;
 const SKIP_EXTS  = /\.(psd|psb|ai|eps|indd|xd|sketch|fig|tif|tiff|bmp|webp|svg|pdf|xlsx?|docx?|zip|rar|7z)$/i;
@@ -1106,6 +1116,8 @@ function readDirectoryEntry(dirEntry, pathParts) {
     };
     readBatch();
   });
+}
+
 // ─── Tab switching ────────────────────────────────────────────────
 function switchTab(id) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -1357,3 +1369,6 @@ customDZ.addEventListener('drop', async e => {
   if (files.length > 0) runCustomCheck(files);
 });
 
+</script>
+</body>
+</html>
