@@ -37,7 +37,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    font-family: -apple-system, 'PingFang TC', 'Microsoft JhengHei', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
     min-height: 100vh;
     padding: 28px 16px 80px;
     font-size: 14px;
@@ -220,7 +220,7 @@
     padding: 4px 8px; background: var(--red-bg);
     border-radius: 5px; border-left: 3px solid var(--red);
   }
-  .error-item::before { content: '✕'; flex-shrink: 0; }
+  .error-item::before { content: '&#x2715;'; flex-shrink: 0; }
   .warn-item {
     font-size: 12px; color: var(--amber);
     display: flex; align-items: flex-start; gap: 5px;
@@ -232,7 +232,7 @@
     padding: 4px 8px; background: var(--info-bg);
     border-radius: 5px; border-left: 3px solid var(--info-bd);
   }
-  .info-item::before { content: 'ℹ'; flex-shrink: 0; }
+  .info-item::before { content: '&#x2139;'; flex-shrink: 0; }
 
   .file-list { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
   .file-entry {
@@ -402,6 +402,86 @@
   }
   .custom-clear-btn:hover { background: #DBEAFE; }
 
+  /* 放大錯誤項目 */
+  .custom-errors-wrap {
+    margin-top: 8px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .custom-error-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: #FEF2F2; border: 1px solid #FECACA;
+    border-left: 4px solid #DC2626;
+    border-radius: 7px; padding: 8px 12px;
+  }
+  .custom-error-icon {
+    color: #DC2626; font-size: 15px; font-weight: 700;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .custom-error-text {
+    color: #991B1B; font-size: 14px; font-weight: 600; line-height: 1.5;
+  }
+  .name-fail {
+    color: #DC2626 !important;
+  }
+
+  /* 張數警告 */
+  .custom-file-row.row-count-warn { border-left: 4px solid #D97706; }
+  .cb-count-warn { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+
+  .count-inline-warning {
+    margin-top: 6px;
+    background: #FEF3C7; border: 1px solid #FDE68A;
+    border-left: 3px solid #D97706;
+    border-radius: 6px; padding: 7px 12px;
+    font-size: 13px; font-weight: 600; color: #92400E;
+  }
+  .count-inline-warning strong { font-size: 15px; color: #B45309; }
+    background: #FEF3C7; border: 1px solid #FDE68A;
+    border-left: 4px solid #D97706;
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; color: #92400E; font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  /* 待檢核區 */
+  .pending-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; flex-wrap: wrap; gap: 8px;
+  }
+  .pending-count {
+    font-size: 13px; font-weight: 700; color: #2563EB;
+  }
+  .pending-clear-btn {
+    background: #fff; border: 1px solid #BFDBFE; color: #60A5FA;
+    padding: 6px 12px; border-radius: 7px; cursor: pointer;
+    font-size: 12px; font-weight: 500;
+  }
+  .pending-clear-btn:hover { background: #EFF6FF; }
+  .pending-confirm-btn {
+    background: #2563EB; color: #fff; border: none;
+    padding: 6px 16px; border-radius: 7px; cursor: pointer;
+    font-size: 13px; font-weight: 700;
+    box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+    transition: background 0.15s;
+  }
+  .pending-confirm-btn:hover { background: #1D4ED8; }
+  .pending-list {
+    display: flex; flex-direction: column; gap: 4px;
+    max-height: 220px; overflow-y: auto;
+    border: 1px solid #DBEAFE; border-radius: 8px;
+    padding: 8px; background: #F8FAFF;
+  }
+  .pending-item {
+    font-size: 12px; color: #1E40AF;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    padding: 4px 8px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; background: #EFF6FF;
+  }
+  .pending-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pending-item-size { color: #60A5FA; flex-shrink: 0; font-size: 11px; }
+  .pending-item-del { color: #93C5FD; cursor: pointer; flex-shrink: 0; }
+  .pending-item-del:hover { color: #DC2626; }
+
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -411,7 +491,7 @@
 <div class="app">
 
   <div class="header">
-    <div class="header-icon">📋</div>
+    <div class="header-icon">&#x1F4CB;</div>
     <div>
       <h1>上架素材規範檢查工具</h1>
       <p>上傳品項資料夾，自動檢查主圖、情境圖、去背、內文圖等素材是否符合上架規範</p>
@@ -419,15 +499,15 @@
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('tab-listing')">📋 新品上架規範</button>
-    <button id="tab-custom-btn" class="tab-btn tab-blue" onclick="switchTab('tab-custom')">🔍 自訂規格檢查</button>
+    <button class="tab-btn active" onclick="switchTab('tab-listing')">&#x1F4CB; 新品上架規範</button>
+    <button id="tab-custom-btn" class="tab-btn tab-blue" onclick="switchTab('tab-custom')">&#x1F50D; 自訂規格檢查</button>
   </div>
 
   <div id="tab-listing" class="tab-panel active">
 
     <div id="dropZone">
       <input type="file" id="fileInput" webkitdirectory multiple accept="image/*,.psd,.psb">
-      <span class="drop-icon">📁</span>
+      <span class="drop-icon">&#x1F4C1;</span>
       <div class="drop-title">拖曳資料夾到此處，或點擊選擇</div>
       <div class="drop-sub">支援一次拖入多個品項資料夾，或整個品項集合資料夾</div>
       <div class="drop-hint">
@@ -456,7 +536,7 @@
         <div class="stat"><span class="stat-num green" id="passCount">0</span><span>全部通過</span></div>
         <div class="stat"><span class="stat-num red" id="failCount">0</span><span>有問題</span></div>
       </div>
-      <button class="btn-reset" onclick="resetApp()">↩ 重新上傳</button>
+      <button class="btn-reset" onclick="resetApp()">&#x21A9; 重新上傳</button>
     </div>
 
     <div id="results"></div>
@@ -469,19 +549,18 @@
 
     <!-- 左：貼上規格 -->
     <div class="spec-panel">
-      <h3>📝 貼上規格文字</h3>
+      <h3>&#x1F4DD; 貼上規格文字</h3>
       <textarea id="specInput" class="spec-textarea"
         placeholder="支援純文字或複製自 Excel 的表格文字，例如：
 
-首圖 800×800 50~400KB
-橫幅 1920×600 100~500KB
-說明圖 1000×1200 200KB以內
+首圖 800×800 50~400KB 5張
+橫幅 1920×600 100~500KB x3
+說明圖 1000×1200 200KB以內 X6
 
-或 Tab 分隔的表格：
-類型	尺寸	KB數
-首圖	800×800	50~400
-內文	1000×1200	200以內"></textarea>
-      <button class="spec-parse-btn" onclick="parseSpecInput()">解析規格 →</button>
+張數格式：5張 / x5 / X5（上傳後會比對實際數量）
+KB 格式：50~400KB / 200KB以內 / 2MB以內
+檔名需含尺寸：1080x500 / 1080X500 / 1080_500（可加px）"></textarea>
+      <button class="spec-parse-btn" onclick="parseSpecInput()">解析規格 &#x2192;</button>
       <div id="parsedRules" class="parsed-rules"></div>
       <div class="rule-hint" id="ruleHint" style="display:none">
         解析完成後，拖曳圖片到右側進行檢查。<br>
@@ -493,10 +572,23 @@
     <div>
       <div id="customDropZone">
         <input type="file" id="customFileInput" multiple accept="image/*">
-        <span class="drop-icon">🖼</span>
+        <span class="drop-icon">&#x1F5BC;</span>
         <div class="drop-title">拖曳圖片到此處，或點擊選擇</div>
-        <div class="drop-sub">可一次拖入多張，支援 JPG / PNG</div>
+        <div class="drop-sub">可分多次加入，加完再按「確認檢核」</div>
       </div>
+
+      <!-- 待檢核清單 -->
+      <div id="pendingArea" style="display:none; margin-top:12px;">
+        <div class="pending-header">
+          <span id="pendingCount" class="pending-count">0 張待檢核</span>
+          <div style="display:flex;gap:8px;">
+            <button class="pending-clear-btn" onclick="clearPending()">清除全部</button>
+            <button class="pending-confirm-btn" onclick="confirmCheck()">確認檢核 &#x2192;</button>
+          </div>
+        </div>
+        <div id="pendingList" class="pending-list"></div>
+      </div>
+
       <div id="customResults"></div>
     </div>
 
@@ -522,11 +614,16 @@ function fmtBytes(b) { return fmt(bytesToKB(b)); }
 // ─── Get image dimensions ─────────────────────────────────────────
 function getImageDimensions(file) {
   return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => { URL.revokeObjectURL(url); resolve({ w: img.naturalWidth, h: img.naturalHeight }); };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve({ w: 0, h: 0 }); };
-    img.src = url;
+    // Try FileReader (base64) first — works in sandboxed iframes
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => resolve({ w: 0, h: 0 });
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve({ w: 0, h: 0 });
+    reader.readAsDataURL(file);
   });
 }
 
@@ -575,7 +672,7 @@ function parseFiles(fileList) {
     let productIdx, subpathParts;
 
     if (parts.length === 2) {
-      // file directly in root: root/filename → treat root as product
+      // file directly in root: root/filename &#x2192; treat root as product
       productIdx = 0;
       subpathParts = parts.slice(1);
     } else {
@@ -866,7 +963,7 @@ async function checkProduct(productData, onProgress) {
 
 // ─── Render ───────────────────────────────────────────────────────
 function statusIcon(status) {
-  return { pass: '✅', fail: '❌', missing: '❌', warn: '⚠️', skip: '—' }[status] || '—';
+  return { pass: '✅', fail: '❌', missing: '❌', warn: '&#x26A0;&#xFE0F;', skip: '—' }[status] || '—';
 }
 function statusText(status) {
   return { pass: '通過', fail: '有問題', missing: '缺少', warn: '注意', skip: '略過' }[status] || '';
@@ -949,7 +1046,7 @@ function renderProduct(productName, catResults, idx) {
       const infoHtml = cat.genInfos && cat.genInfos.length > 0
         ? cat.genInfos.map(e => `<div class="info-item">${e}</div>`).join('')
         : '';
-      bodyContent = `<div class="pass-msg">✓ ${count} 個檔案，全部符合規範</div>${infoHtml ? `<div class="cat-errors">${infoHtml}</div>` : ''}`;
+      bodyContent = `<div class="pass-msg">&#x2713; ${count} 個檔案，全部符合規範</div>${infoHtml ? `<div class="cat-errors">${infoHtml}</div>` : ''}`;
     } else {
       const genErrHtml = hasGenErrors
         ? cat.genErrors.map(e => `<div class="error-item">${e}</div>`).join('')
@@ -1138,57 +1235,100 @@ function parseSpecInput() {
   const rules = [];
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
-  for (const line of lines) {
-    // Split by tab (Excel paste) or multiple spaces or common delimiters
-    const cols = line.split(/\t|  +|｜|\|/).map(c => c.trim()).filter(Boolean);
-    const fullLine = cols.join(' ');
+  // ── 判斷是否為「橫向表格」格式 ──────────────────────────────
+  // 橫向：第一欄是「尺寸」「數量」等屬性名稱，第一列是規格名稱
+  // 特徵：有一行以 tab 分隔，第一個 cell 包含「尺寸」「size」「數量」等關鍵字
+  const tabLines = lines.map(l => l.split('\t').map(c => c.trim()));
+  const hasTabs = tabLines.some(cols => cols.length >= 3);
 
-    // Extract dimensions: WxH or W×H or W*H, with optional 以內/以上/~
-    // Patterns: 800×800, 1000x1200, 寬1000高1200, 1000px×1200px
-    const dimMatch = fullLine.match(/(\d+)\s*[×xX\*]\s*(\d+)/);
-    if (!dimMatch) continue;
+  if (hasTabs) {
+    // 找出各屬性列
+    let headerRow = null;   // 規格名稱列（含「投放位置」「名稱」或第一列）
+    let dimRow = null;      // 尺寸列
+    let countRow = null;    // 數量列
+    let kbRow = null;       // KB 列
 
-    const w = parseInt(dimMatch[1]);
-    const h = parseInt(dimMatch[2]);
-
-    // Extract KB: 50~400KB, 200KB以內, 最大500KB, 50-400KB, ≤500KB, <500KB
-    let minKB = null, maxKB = null;
-
-    const rangeKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[~\-–]\s*(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
-    const maxOnlyKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以內|以下|內|max|MAX|↓|≤|<=|<)/);
-    const minOnlyKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以上|above|↑|≥|>=|>)/);
-    const plainKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
-    const mbMax = fullLine.match(/(\d+(?:\.\d+)?)\s*[Mm][Bb]\s*(?:以內|以下|內|max|MAX|↓|≤|<=|<)?/);
-
-    if (rangeKB) {
-      minKB = parseFloat(rangeKB[1]);
-      maxKB = parseFloat(rangeKB[2]);
-    } else if (maxOnlyKB) {
-      maxKB = parseFloat(maxOnlyKB[1]);
-    } else if (minOnlyKB) {
-      minKB = parseFloat(minOnlyKB[1]);
-    } else if (mbMax) {
-      maxKB = parseFloat(mbMax[1]) * 1024;
-    } else if (plainKB) {
-      maxKB = parseFloat(plainKB[1]);
-    }
-
-    // Name: first column if multiple, otherwise try to extract Chinese label
-    let name = '';
-    if (cols.length >= 2) {
-      // First col as name (if it doesn't look like a number/dimension)
-      const firstCol = cols[0];
-      if (!/^\d/.test(firstCol) && !/[×xX]/.test(firstCol)) {
-        name = firstCol;
+    for (const cols of tabLines) {
+      const first = cols[0];
+      if (/尺寸|size|像素|px|dimension/i.test(first)) { dimRow = cols; continue; }
+      if (/數量|count|張數|quantity/i.test(first)) { countRow = cols; continue; }
+      if (/kb|容量|大小|filesize/i.test(first)) { kbRow = cols; continue; }
+      if (/投放|名稱|版本|規格|位置|類型|項目/i.test(first) || headerRow === null) {
+        // 第一個非屬性列當作 header
+        headerRow = cols;
       }
     }
-    if (!name) {
-      // Try to extract Chinese characters as name
-      const cnMatch = fullLine.match(/[\u4e00-\u9fff\u3400-\u4dbf]+(?:[\s\u4e00-\u9fff\u3400-\u4dbf]*[\u4e00-\u9fff\u3400-\u4dbf]+)?/);
-      name = cnMatch ? cnMatch[0].trim() : `規格${rules.length + 1}`;
-    }
 
-    rules.push({ name, w, h, minKB, maxKB, raw: line });
+    if (dimRow && headerRow) {
+      // 從第 2 欄開始（col index 1+）每欄對應一個規格
+      for (let i = 1; i < dimRow.length; i++) {
+        const dimStr = dimRow[i];
+        const dimMatch = dimStr.match(/(\d+)\s*[×xX\*]\s*(\d+)/);
+        if (!dimMatch) continue;
+
+        const w = parseInt(dimMatch[1]);
+        const h = parseInt(dimMatch[2]);
+        const name = (headerRow[i] || `規格${rules.length + 1}`).replace(/["'「」]/g, '').trim();
+        const count = countRow ? (parseInt(countRow[i]) || null) : null;
+
+        let minKB = null, maxKB = null;
+        if (kbRow && kbRow[i]) {
+          const kb = kbRow[i];
+          const rangeKB = kb.match(/(\d+)\s*[~\-]\s*(\d+)/);
+          const maxKB_ = kb.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以內|以下|<|≤)/);
+          const mb = kb.match(/(\d+(?:\.\d+)?)\s*[Mm][Bb]/);
+          if (rangeKB) { minKB = +rangeKB[1]; maxKB = +rangeKB[2]; }
+          else if (maxKB_) { maxKB = +maxKB_[1]; }
+          else if (mb) { maxKB = parseFloat(mb[1]) * 1024; }
+        }
+
+        rules.push({ name, w, h, minKB, maxKB, count, raw: `${name} ${dimStr}` });
+      }
+    }
+  }
+
+  // ── 一般逐行解析（橫向未解出結果，或非 tab 格式）──────────
+  if (rules.length === 0) {
+    for (const line of lines) {
+      const cols = line.split(/\t|  +|｜|\|/).map(c => c.trim()).filter(Boolean);
+      const fullLine = cols.join(' ');
+
+      const dimMatch = fullLine.match(/(\d+)\s*[×xX\*]\s*(\d+)/);
+      if (!dimMatch) continue;
+
+      const w = parseInt(dimMatch[1]);
+      const h = parseInt(dimMatch[2]);
+
+      let minKB = null, maxKB = null;
+      const rangeKB   = fullLine.match(/(\d+(?:\.\d+)?)\s*[~\-–]\s*(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
+      const maxOnlyKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以內|以下|內|max|MAX|&#x2193;|≤|<=|<)/);
+      const minOnlyKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以上|above|&#x2191;|≥|>=|>)/);
+      const mbMax     = fullLine.match(/(\d+(?:\.\d+)?)\s*[Mm][Bb]\s*(?:以內|以下|內|max|MAX|&#x2193;|≤|<=|<)?/);
+      const plainKB   = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
+
+      if (rangeKB) { minKB = parseFloat(rangeKB[1]); maxKB = parseFloat(rangeKB[2]); }
+      else if (maxOnlyKB) { maxKB = parseFloat(maxOnlyKB[1]); }
+      else if (minOnlyKB) { minKB = parseFloat(minOnlyKB[1]); }
+      else if (mbMax)     { maxKB = parseFloat(mbMax[1]) * 1024; }
+      else if (plainKB)   { maxKB = parseFloat(plainKB[1]); }
+
+      let name = '';
+      if (cols.length >= 2) {
+        const firstCol = cols[0];
+        if (!/^\d/.test(firstCol) && !/[×xX\*]/.test(firstCol)) name = firstCol;
+      }
+      if (!name) {
+        const cnMatch = fullLine.match(/[\u4e00-\u9fff\u3400-\u4dbf][\u4e00-\u9fff\u3400-\u4dbf\w\s（）()－\-]*/);
+        name = cnMatch ? cnMatch[0].trim().slice(0,20) : `規格${rules.length + 1}`;
+      }
+
+      const lineWithoutDim = fullLine.replace(/\d+\s*[×xX\*]\s*\d+(\s*px)?/g, '');
+      let count = null;
+      const countMatch = lineWithoutDim.match(/[xX×]\s*(\d+)|(\d+)\s*張/);
+      if (countMatch) count = parseInt(countMatch[1] || countMatch[2]);
+
+      rules.push({ name, w, h, minKB, maxKB, count, raw: line });
+    }
   }
 
   customRules = rules;
@@ -1209,10 +1349,11 @@ function renderParsedRules() {
     const kbText = r.minKB && r.maxKB ? `${r.minKB}～${r.maxKB} KB`
       : r.maxKB ? `≤ ${r.maxKB < 1024 ? r.maxKB + ' KB' : (r.maxKB/1024).toFixed(1) + ' MB'}`
       : r.minKB ? `≥ ${r.minKB} KB` : '不限 KB';
+    const countText = r.count ? `　${r.count} 張` : '';
     return `<div class="rule-chip">
       <span class="rule-chip-name">${r.name}</span>
-      <span class="rule-chip-spec">${r.w}×${r.h}px　${kbText}</span>
-      <span class="rule-chip-del" onclick="deleteRule(${i})" title="刪除">✕</span>
+      <span class="rule-chip-spec">${r.w}×${r.h}px　${kbText}${countText}</span>
+      <span class="rule-chip-del" onclick="deleteRule(${i})" title="刪除">&#x2715;</span>
     </div>`;
   }).join('');
   document.getElementById('customDropZone').classList.toggle('has-rules', customRules.length > 0);
@@ -1225,24 +1366,87 @@ function deleteRule(i) {
 }
 
 // ─── Custom file check ────────────────────────────────────────────
-let customFileCache = []; // { file, w, h, kb }
+let customFileCache = [];   // 已檢核結果
+let pendingFiles = [];      // 待檢核佇列 { file, sizeText }
 
-async function runCustomCheck(files) {
+function addToPending(files) {
+  const IMAGE_RE = /\.(jpe?g|png|gif|webp|bmp)$/i;
+  const newFiles = Array.from(files).filter(f => IMAGE_RE.test(f.name));
+  newFiles.forEach(f => {
+    // 避免重複加入（同名同大小）
+    const dup = pendingFiles.find(p => p.file.name === f.name && p.file.size === f.size);
+    if (!dup) pendingFiles.push({ file: f, sizeText: (f.size/1000).toFixed(1) + ' KB' });
+  });
+  renderPending();
+}
+
+function renderPending() {
+  const area = document.getElementById('pendingArea');
+  const list = document.getElementById('pendingList');
+  const countEl = document.getElementById('pendingCount');
+  if (pendingFiles.length === 0) { area.style.display = 'none'; return; }
+  area.style.display = 'block';
+  countEl.textContent = `${pendingFiles.length} 張待檢核`;
+  list.innerHTML = pendingFiles.map((p, i) => `
+    <div class="pending-item">
+      <span class="pending-item-name">${p.file.name}</span>
+      <span class="pending-item-size">${p.sizeText}</span>
+      <span class="pending-item-del" onclick="removePending(${i})">&#x2715;</span>
+    </div>`).join('');
+}
+
+function removePending(i) {
+  pendingFiles.splice(i, 1);
+  renderPending();
+}
+
+function clearPending() {
+  pendingFiles = [];
+  renderPending();
+  document.getElementById('customResults').innerHTML = '';
+}
+
+async function confirmCheck() {
   const container = document.getElementById('customResults');
-  if (customRules.length === 0) {
-    container.innerHTML = `<div class="rule-hint" style="margin-top:12px;display:block">請先在左側貼上規格並解析。</div>`;
+
+  if (pendingFiles.length === 0) {
+    container.innerHTML = `<div class="rule-hint" style="margin-top:12px;display:block;color:#DC2626">&#x26A0;&#xFE0F; 尚未加入任何圖片，請先拖入或選擇圖片。</div>`;
     return;
   }
-  container.innerHTML = `<div class="rule-hint" style="margin-top:12px;display:block">檢查中…</div>`;
+  if (customRules.length === 0) {
+    container.innerHTML = `<div class="rule-hint" style="margin-top:12px;display:block;color:#DC2626">&#x26A0;&#xFE0F; 尚未解析規格，請在左側貼上規格文字並按「解析規格」。</div>`;
+    return;
+  }
+
+  const btn = document.querySelector('.pending-confirm-btn');
+  btn.textContent = '檢核中…';
+  btn.disabled = true;
+
+  container.innerHTML = `<div class="rule-hint" style="margin-top:12px;display:block">讀取圖片中（${pendingFiles.length} 張）…</div>`;
 
   const entries = [];
-  for (const file of files) {
+  for (let i = 0; i < pendingFiles.length; i++) {
+    const { file } = pendingFiles[i];
     const dims = await getImageDimensions(file);
     const kb = bytesToKB(file.size);
     entries.push({ file, w: dims.w, h: dims.h, kb });
+    if (i % 3 === 0) {
+      container.innerHTML = `<div class="rule-hint" style="margin-top:12px;display:block">讀取中 ${i+1} / ${pendingFiles.length}…</div>`;
+      await new Promise(r => setTimeout(r, 0)); // 讓 UI 有機會更新
+    }
   }
   customFileCache = entries;
   renderCustomResults(entries);
+
+  // 檢核完成後隱藏待檢核清單
+  document.getElementById('pendingArea').style.display = 'none';
+
+  btn.textContent = '確認檢核 &#x2192;';
+  btn.disabled = false;
+}
+
+async function runCustomCheck(files) {
+  addToPending(files);
 }
 
 function rerunCustomCheck() {
@@ -1262,15 +1466,32 @@ function matchRule(entry) {
 
 function checkAgainstRule(entry, rule) {
   const errors = [];
+
+  // 尺寸檢查
   if (entry.w !== rule.w || entry.h !== rule.h) {
-    errors.push(`尺寸 ${entry.w}×${entry.h}px，應為 ${rule.w}×${rule.h}px`);
+    errors.push(`尺寸錯誤：實際 ${entry.w}×${entry.h}px，規格須為 ${rule.w}×${rule.h}px`);
   }
+
+  // KB 檢查
   if (rule.minKB !== null && entry.kb < rule.minKB) {
     errors.push(`檔案過小：${entry.kb.toFixed(1)} KB（下限 ${rule.minKB} KB）`);
   }
   if (rule.maxKB !== null && entry.kb > rule.maxKB) {
     errors.push(`檔案過大：${entry.kb.toFixed(1)} KB（上限 ${rule.maxKB < 1024 ? rule.maxKB + ' KB' : (rule.maxKB/1024).toFixed(1) + ' MB'}）`);
   }
+
+  // 檔名尺寸檢查：需包含 WxH / W×H / W_H（不分大小寫，可加px後綴）
+  const w = rule.w, h = rule.h;
+  const namePatterns = [
+    `${w}x${h}`, `${w}X${h}`, `${w}_${h}`,
+    `${w}x${h}px`, `${w}X${h}px`, `${w}_${h}px`
+  ];
+  const fname = entry.file.name;
+  const hasSize = namePatterns.some(p => fname.toLowerCase().includes(p.toLowerCase()));
+  if (!hasSize) {
+    errors.push(`檔名未包含尺寸標示，需包含以下其一：${namePatterns.slice(0,3).join(' / ')}（可加 px 後綴）`);
+  }
+
   return errors;
 }
 
@@ -1282,6 +1503,10 @@ function renderCustomResults(entries) {
     return;
   }
 
+  // 每條規則的檔案歸組（用於張數統計）
+  const ruleGroups = {};
+  customRules.forEach((r, i) => ruleGroups[i] = []);
+
   let passCount = 0, failCount = 0, nomatchCount = 0;
   const rows = entries.map(entry => {
     const rule = matchRule(entry);
@@ -1291,49 +1516,86 @@ function renderCustomResults(entries) {
         <div class="custom-file-info">
           <div class="custom-file-name">${entry.file.name}</div>
           <div class="custom-file-meta">${entry.w}×${entry.h}px　${entry.kb.toFixed(1)} KB</div>
-          <div style="font-size:12px;color:var(--text-muted)">— 無對應規格（尺寸不符任何規則）</div>
+          <div style="font-size:12px;color:#93C5FD;margin-top:4px">— 無對應規格（尺寸不符任何規則）</div>
         </div>
         <span class="custom-badge cb-nomatch">無對應</span>
       </div>`;
     }
 
+    // 歸組
+    const ruleIdx = customRules.indexOf(rule);
+    if (ruleIdx >= 0) ruleGroups[ruleIdx].push(entry);
+
     const errors = checkAgainstRule(entry, rule);
-    if (errors.length === 0) passCount++;
+
+    // 張數不足警告（標在每個通過的項目上）
+    const actualCount = ruleIdx >= 0 ? ruleGroups[ruleIdx].length : 0;
+    const countShortage = rule.count && actualCount < rule.count;
+
+    if (errors.length === 0 && !countShortage) passCount++;
+    else if (errors.length === 0 && countShortage) passCount++; // 仍算通過，但加警告
     else failCount++;
 
     const kbText = rule.minKB && rule.maxKB ? `${rule.minKB}～${rule.maxKB} KB`
       : rule.maxKB ? `≤ ${rule.maxKB < 1024 ? rule.maxKB + ' KB' : (rule.maxKB/1024).toFixed(1) + ' MB'}`
       : rule.minKB ? `≥ ${rule.minKB} KB` : '';
-    const ruleSpec = `${rule.w}×${rule.h}px${kbText ? '　' + kbText : ''}`;
+    const ruleSpec = `${rule.w}×${rule.h}px${kbText ? '　' + kbText : ''}${rule.count ? `　${rule.count} 張` : ''}`;
 
-    const errHtml = errors.map(e => `<div class="error-item">${e}</div>`).join('');
+    // 錯誤放大顯示
+    const errHtml = errors.map(e => `
+      <div class="custom-error-item">
+        <span class="custom-error-icon">&#x2715;</span>
+        <span class="custom-error-text">${e}</span>
+      </div>`).join('');
 
-    return `<div class="custom-file-row ${errors.length === 0 ? 'row-pass' : 'row-fail'}">
+    // 張數不足提示（貼在通過項目上）
+    const countBannerHtml = countShortage ? `
+      <div class="count-inline-warning">
+        &#x26A0;&#xFE0F; 規格「${rule.name}」需要 <strong>${rule.count}</strong> 張，目前僅 <strong>${actualCount}</strong> 張，還差 <strong>${rule.count - actualCount}</strong> 張
+      </div>` : '';
+
+    return `<div class="custom-file-row ${errors.length === 0 ? (countShortage ? 'row-count-warn' : 'row-pass') : 'row-fail'}">
       <div class="custom-file-info">
-        <div class="custom-file-name">${entry.file.name}</div>
+        <div class="custom-file-name ${errors.length > 0 ? 'name-fail' : ''}">${entry.file.name}</div>
         <div class="custom-file-meta">${entry.w}×${entry.h}px　${entry.kb.toFixed(1)} KB</div>
         <div class="custom-rule-match">對應規格：${rule.name}（${ruleSpec}）</div>
-        ${errHtml ? `<div class="cat-errors" style="margin-top:4px">${errHtml}</div>` : ''}
+        ${countBannerHtml}
+        ${errHtml ? `<div class="custom-errors-wrap">${errHtml}</div>` : ''}
       </div>
-      <span class="custom-badge ${errors.length === 0 ? 'cb-pass' : 'cb-fail'}">${errors.length === 0 ? '通過' : '有問題'}</span>
+      <span class="custom-badge ${errors.length === 0 ? (countShortage ? 'cb-count-warn' : 'cb-pass') : 'cb-fail'}">${errors.length === 0 ? (countShortage ? '&#x26A0;&#xFE0F; 張數不足' : '&#x2713; 通過') : `&#x2715; ${errors.length} 項問題`}</span>
     </div>`;
   });
+
+  // 張數警告（每條規則）
+  const countWarnings = customRules.map((r, i) => {
+    if (!r.count) return '';
+    const actual = ruleGroups[i].length;
+    if (actual !== r.count) {
+      return `<div class="count-warning">
+        &#x26A0;&#xFE0F; 規格「${r.name}」需要 ${r.count} 張，實際上傳 <strong>${actual}</strong> 張
+      </div>`;
+    }
+    return '';
+  }).filter(Boolean).join('');
 
   const total = entries.length;
   container.innerHTML = `
     <div class="custom-summary-bar">
-      <span class="stat"><span class="stat-num blue" style="font-size:18px">${total}</span>&nbsp;張</span>
+      <span class="stat"><span class="stat-num" style="font-size:18px;color:#2563EB">${total}</span>&nbsp;張</span>
       <span class="stat"><span class="stat-num green" style="font-size:18px">${passCount}</span>&nbsp;通過</span>
       <span class="stat"><span class="stat-num red" style="font-size:18px">${failCount}</span>&nbsp;有問題</span>
-      ${nomatchCount > 0 ? `<span class="stat"><span class="stat-num" style="font-size:18px;color:var(--text-muted)">${nomatchCount}</span>&nbsp;無對應</span>` : ''}
+      ${nomatchCount > 0 ? `<span class="stat"><span class="stat-num" style="font-size:18px;color:#93C5FD">${nomatchCount}</span>&nbsp;無對應</span>` : ''}
       <button class="custom-clear-btn" onclick="clearCustom()">清除</button>
     </div>
+    ${countWarnings}
     ${rows.join('')}
   `;
 }
 
 function clearCustom() {
   customFileCache = [];
+  pendingFiles = [];
+  renderPending();
   document.getElementById('customResults').innerHTML = '';
 }
 
