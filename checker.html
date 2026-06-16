@@ -427,7 +427,12 @@
   .custom-file-row.row-count-warn { border-left: 4px solid #D97706; }
   .cb-count-warn { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 
-  .count-inline-warning {
+  .dup-badge {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    background: #EDE9FE; color: #6D28D9; border: 1px solid #DDD6FE;
+    border-radius: 10px; padding: 1px 8px; margin-left: 6px;
+    vertical-align: middle; font-family: inherit;
+  }
     margin-top: 6px;
     background: #FEF3C7; border: 1px solid #FDE68A;
     border-left: 3px solid #D97706;
@@ -1290,44 +1295,82 @@ function parseSpecInput() {
   // ── 一般逐行解析（橫向未解出結果，或非 tab 格式）──────────
   if (rules.length === 0) {
     for (const line of lines) {
-      const cols = line.split(/\t|  +|｜|\|/).map(c => c.trim()).filter(Boolean);
-      const fullLine = cols.join(' ');
+      // 先把一行裡的多個規格切開
+      // 分割點：引號包住的片段、或 "空白+數字開頭的尺寸" 前面加分割
+      // ex: 2000 x 500 < 500kb"  "750*340(80kb)  → 兩個規格
+      const rawLine = line.replace(/["""]/g, '"');
 
-      const dimMatch = fullLine.match(/(\d+)\s*[×xX\*]\s*(\d+)/);
-      if (!dimMatch) continue;
-
-      const w = parseInt(dimMatch[1]);
-      const h = parseInt(dimMatch[2]);
-
-      let minKB = null, maxKB = null;
-      const rangeKB   = fullLine.match(/(\d+(?:\.\d+)?)\s*[~\-–]\s*(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
-      const maxOnlyKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以內|以下|內|max|MAX|&#x2193;|≤|<=|<)/);
-      const minOnlyKB = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以上|above|&#x2191;|≥|>=|>)/);
-      const mbMax     = fullLine.match(/(\d+(?:\.\d+)?)\s*[Mm][Bb]\s*(?:以內|以下|內|max|MAX|&#x2193;|≤|<=|<)?/);
-      const plainKB   = fullLine.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
-
-      if (rangeKB) { minKB = parseFloat(rangeKB[1]); maxKB = parseFloat(rangeKB[2]); }
-      else if (maxOnlyKB) { maxKB = parseFloat(maxOnlyKB[1]); }
-      else if (minOnlyKB) { minKB = parseFloat(minOnlyKB[1]); }
-      else if (mbMax)     { maxKB = parseFloat(mbMax[1]) * 1024; }
-      else if (plainKB)   { maxKB = parseFloat(plainKB[1]); }
-
-      let name = '';
-      if (cols.length >= 2) {
-        const firstCol = cols[0];
-        if (!/^\d/.test(firstCol) && !/[×xX\*]/.test(firstCol)) name = firstCol;
+      // 嘗試以引號切割
+      let segments = [];
+      if (rawLine.includes('"')) {
+        segments = rawLine.split('"').map(s => s.trim()).filter(s => /\d+\s*[×xX\*]\s*\d+/.test(s));
       }
-      if (!name) {
-        const cnMatch = fullLine.match(/[\u4e00-\u9fff\u3400-\u4dbf][\u4e00-\u9fff\u3400-\u4dbf\w\s（）()－\-]*/);
-        name = cnMatch ? cnMatch[0].trim().slice(0,20) : `規格${rules.length + 1}`;
+      // 如果沒有引號，嘗試以「空白後跟數字×數字」為分割點拆出多個規格
+      if (segments.length === 0) {
+        // 找到所有尺寸的位置，每個尺寸開頭切一段
+        const dimPositions = [];
+        const dimRe = /\d+\s*[×xX\*]\s*\d+/g;
+        let m;
+        while ((m = dimRe.exec(rawLine)) !== null) dimPositions.push(m.index);
+
+        if (dimPositions.length > 1) {
+          for (let i = 0; i < dimPositions.length; i++) {
+            const start = i === 0 ? 0 : dimPositions[i];
+            const end = i + 1 < dimPositions.length ? dimPositions[i + 1] : rawLine.length;
+            // 往前找名稱（取前一段到當前尺寸之間的文字）
+            segments.push(rawLine.slice(start, end).trim());
+          }
+        } else {
+          segments = [rawLine];
+        }
       }
 
-      const lineWithoutDim = fullLine.replace(/\d+\s*[×xX\*]\s*\d+(\s*px)?/g, '');
-      let count = null;
-      const countMatch = lineWithoutDim.match(/[xX×]\s*(\d+)|(\d+)\s*張/);
-      if (countMatch) count = parseInt(countMatch[1] || countMatch[2]);
+      for (const seg of segments) {
+        const cols = seg.split(/\t|  +|｜|\|/).map(c => c.trim()).filter(Boolean);
+        const fullLine = seg.trim();
 
-      rules.push({ name, w, h, minKB, maxKB, count, raw: line });
+        const dimMatch = fullLine.match(/(\d+)\s*[×xX\*]\s*(\d+)/);
+        if (!dimMatch) continue;
+
+        const w = parseInt(dimMatch[1]);
+        const h = parseInt(dimMatch[2]);
+
+        // KB 解析：只看尺寸後面的文字，避免把尺寸數字誤當KB
+        const afterDim = fullLine.slice(dimMatch.index + dimMatch[0].length);
+
+        let minKB = null, maxKB = null;
+        const rangeKB   = afterDim.match(/(\d+(?:\.\d+)?)\s*[~\-–]\s*(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
+        const maxOnlyKB = afterDim.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*(?:以內|以下|內|max|MAX|≤|<=|<)/);
+        const ltKB      = afterDim.match(/<\s*(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);  // < 120kb
+        const parenKB   = afterDim.match(/\(\s*(\d+(?:\.\d+)?)\s*[Kk][Bb]?\s*\)/); // (80kb)
+        const mbMax     = afterDim.match(/(\d+(?:\.\d+)?)\s*[Mm][Bb]/);
+        const plainKB   = afterDim.match(/(\d+(?:\.\d+)?)\s*[Kk][Bb]?/);
+
+        if (rangeKB)   { minKB = parseFloat(rangeKB[1]); maxKB = parseFloat(rangeKB[2]); }
+        else if (maxOnlyKB) { maxKB = parseFloat(maxOnlyKB[1]); }
+        else if (ltKB)      { maxKB = parseFloat(ltKB[1]); }
+        else if (parenKB)   { maxKB = parseFloat(parenKB[1]); }
+        else if (mbMax)     { maxKB = parseFloat(mbMax[1]) * 1024; }
+        else if (plainKB)   { maxKB = parseFloat(plainKB[1]); }
+
+        // 名稱：尺寸前的文字
+        const beforeDim = fullLine.slice(0, dimMatch.index).trim().replace(/["""(（]/g, '').trim();
+        let name = '';
+        if (beforeDim && !/^\d/.test(beforeDim)) {
+          name = beforeDim.slice(0, 20);
+        }
+        if (!name) {
+          const cnMatch = fullLine.match(/[\u4e00-\u9fff\u3400-\u4dbf][\u4e00-\u9fff\u3400-\u4dbf\w\s（）()－\-]*/);
+          name = cnMatch ? cnMatch[0].trim().slice(0, 20) : `規格${rules.length + 1}`;
+        }
+
+        const lineWithoutDim = fullLine.replace(/\d+\s*[×xX\*]\s*\d+(\s*px)?/g, '');
+        let count = null;
+        const countMatch = lineWithoutDim.match(/[xX×]\s*(\d+)|(\d+)\s*張/);
+        if (countMatch) count = parseInt(countMatch[1] || countMatch[2]);
+
+        rules.push({ name, w, h, minKB, maxKB, count, raw: seg });
+      }
     }
   }
 
@@ -1507,6 +1550,13 @@ function renderCustomResults(entries) {
   const ruleGroups = {};
   customRules.forEach((r, i) => ruleGroups[i] = []);
 
+  // 統計相同尺寸的檔案數（用於標示重複）
+  const dimCount = {};
+  entries.forEach(e => {
+    const key = `${e.w}x${e.h}`;
+    dimCount[key] = (dimCount[key] || 0) + 1;
+  });
+
   let passCount = 0, failCount = 0, nomatchCount = 0;
   const rows = entries.map(entry => {
     const rule = matchRule(entry);
@@ -1541,6 +1591,12 @@ function renderCustomResults(entries) {
       : rule.minKB ? `≥ ${rule.minKB} KB` : '';
     const ruleSpec = `${rule.w}×${rule.h}px${kbText ? '　' + kbText : ''}${rule.count ? `　${rule.count} 張` : ''}`;
 
+    // 相同尺寸多張標示
+    const dimKey = `${entry.w}x${entry.h}`;
+    const sameCount = dimCount[dimKey] || 1;
+    const sameIdx = entries.filter((e, ei) => ei <= entries.indexOf(entry) && e.w === entry.w && e.h === entry.h).length;
+    const dupBadge = sameCount > 1 ? `<span class="dup-badge">相同尺寸 ${sameIdx}/${sameCount}</span>` : '';
+
     // 錯誤放大顯示
     const errHtml = errors.map(e => `
       <div class="custom-error-item">
@@ -1556,7 +1612,7 @@ function renderCustomResults(entries) {
 
     return `<div class="custom-file-row ${errors.length === 0 ? (countShortage ? 'row-count-warn' : 'row-pass') : 'row-fail'}">
       <div class="custom-file-info">
-        <div class="custom-file-name ${errors.length > 0 ? 'name-fail' : ''}">${entry.file.name}</div>
+        <div class="custom-file-name ${errors.length > 0 ? 'name-fail' : ''}">${entry.file.name} ${dupBadge}</div>
         <div class="custom-file-meta">${entry.w}×${entry.h}px　${entry.kb.toFixed(1)} KB</div>
         <div class="custom-rule-match">對應規格：${rule.name}（${ruleSpec}）</div>
         ${countBannerHtml}
